@@ -67,11 +67,6 @@ function New-GforcesTour {
             if(!(Test-Path $($carFolder))) {
                 throw "The following folder is obsolete: $($_.FullName)"
             }
-            # Check that all the car folders contain any HTML file.
-            # That would mean that I generated the tiles for a car, but then I didn't add the details to config.xml
-            # and run the script to generate the tour files
-            if(!(Test-Path "$($_.FullName)/*.html")){Throw "The follwing folder doesn't contain any HTLM files: $($_.FullName)`
-            This is probably because I generated the tiles but I didn't add the details to the config.xml file"}
         }
         Write-Verbose "-------------------- Cars --------------------"
     }
@@ -99,6 +94,14 @@ function New-GforcesTour {
         }
     }
     End {
+    # Check that all the car folders contain any HTML file.
+    # If there isn't one, that would mean that I generated the tiles for a car, but I didn't add the details to config.xml
+    # and run the script to generate the tour files
+    Get-ChildItem . -Exclude .src, .no_scenes, brands, shared -Directory |
+        foreach {
+            if(!(Test-Path "$($_.FullName)/*.html")){Throw "The follwing folder doesn't contain any HTLM files: $($_.FullName)`
+            This is probably because I generated the tiles but I didn't add the details to the config.xml file"}
+        }
     # Add 'brands/index.html'
     Add-GfocesBrandsIndex
     # Add 'brands/country/index.html'
