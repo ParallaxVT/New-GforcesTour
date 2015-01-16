@@ -79,6 +79,9 @@ function New-GforcesTour {
                         $tour = $($car.id) | where { $_ -match $TourName.BaseName }
                         if ($tour -notlike "" ){
                             Write-Verbose ">> $tour"
+                            # Extract information from the car file name
+                            $countrycode = ($tour -split "_")[0]
+                            $brand = ($tour -split "_")[1]
                             # Add index.html and devel.html
                             Add-GforcesHtmlFiles
                             # Add 'car/files/content/coord.xml' and 'car/files/content/panolist.xml'
@@ -87,6 +90,8 @@ function New-GforcesTour {
                             Add-GforcesDevelXml
                             # Add 'car/file/tour.xml'
                             Add-GforcesTourXml
+                            # Add each car to an array
+                            [Array]$tourArray += $countrycode + "_" + $brand
                         }
                     }
                 }
@@ -94,6 +99,8 @@ function New-GforcesTour {
         }
     }
     End {
+    # Remove duplicates from the array
+    $tourArray = $tourArray | Split-String "," | sort -Unique
     # Check that all the car folders contain any HTML file.
     # If there isn't one, that would mean that I generated the tiles for a car, but I didn't add the details to config.xml
     # and run the script to generate the tour files

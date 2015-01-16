@@ -56,13 +56,20 @@ function Add-GforcesDevelXml {
 # This function is used by Add-GforcesTourXml and Add-GforcesBrandXml
 function Add-ToTourXml ($selectedFolder) {
     foreach ($xmlFile in $selectedFolder) {
-        #write-host $xmlFile.fullname
         Get-Content $xmlFile |
         # Skip the lines containing krpano tags
         where { $_ -notmatch "<krpano" -and $_ -notmatch "</krpano" -and $_.trim() -ne "" } |
         # Remove any whitespace before ="
-        foreach { ($_).replace('\s+="','="') } |
-        # Remove any whitespace at the start of each line
+        foreach { $_ -replace '\s+="','="' } |
+        # Add custom images to cars from 'nl'
+        foreach {
+            if ($countrycode -eq "nl") {
+                $_ -replace 'tions/inst', 'tions/nl_inst' `
+                   -replace 'fs.png', 'nl_fs.png' `
+                   -replace 'message.png', 'nl_message.png' `
+            } else { $_ }
+        } |
+        # Remove any whitespace at the start of each line. Do this always the last thing in this function
         foreach { $_.ToString().TrimStart() |
         Add-Content $tourFile
         }
@@ -78,15 +85,12 @@ function Add-GforcesTourXml {
     Add-Content $tourFile '<krpano logkey="true" />'
     # Add XML files inside 'content' folder
     $contentFolder = Get-ChildItem "$dir\$tour\files\content\*.xml"
-    #Write-Verbose content -Verbose
     Add-ToTourXml $contentFolder
     # Add XML files inside 'include' folder
     $includeFolder = Get-ChildItem "$dir\shared\include\*\*.xml" -Exclude coordfinder, editor_and_options
-    #Write-Verbose include -Verbose
     Add-ToTourXml $includeFolder
     # Add XML files inside 'scenes' folder
     $scenesFolder = Get-ChildItem "$dir\$tour\files\scenes\*.xml"
-    #Write-Verbose scenes -Verbose
     Add-ToTourXml $scenesFolder
     Add-Content $tourFile '</krpano>'
 }
@@ -120,133 +124,98 @@ function Add-GfocesBrandsIndex {
 function Add-GforcesCountryIndex {
     Write-Verbose ">> Countries:"
     $tour = $configXml.tour.country
-    foreach ($country in $tour) {
-        $countryFolder = "$dir\brands\$($country.id)"
-        if (!(Test-Path "$countryFolder")) {
-            New-Item "$countryFolder" -Type Directory | Out-Null
-            Write-Debug "     Add folder $countryFolder"
-        }
-        Get-Content "$dir\.src\html\index_template.html" |
-        foreach {
-            if ($_ -match 'ADDCONTENT' ) {
-                '            <h5><a href="../index.html">(Up One Level)</a></h5>'
-                foreach ($brand in $country.brand) {
-                    '            <h4><a href="./' + $($brand.id) + '/index.html">' + $brand.name + '</a></h4>'
-                    '            <ul>'
-                    foreach ($model in $brand.model) {
-                        foreach ($car in $model.car) {
-                        '                <li><a href="../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
-                        }
-                    }
-                    '            </ul>'
-                }
-            }
-            else
-            {
-                $_
-            }
-        } |
-        foreach {($_).replace('NEWPATH','../..')} |
-        foreach {($_).replace('HOMEPATH','..')} |
-        foreach {($_).replace('All Brands','Grid View')} |
-        foreach {($_).replace('./brands/index.html','./grid_brands.html')} |
-        Set-Content "$countryFolder\index.html"
-        # devel.html
-        Get-Content "$dir\.src\html\index_template.html" |
-        foreach {
-            if ($_ -match 'ADDCONTENT' ) {
-                '            <h5><a href="../index.html">(Up One Level)</a></h5>'
-                foreach ($brand in $country.brand) {
-                    '            <h4>' + $brand.name + '</h4>'
-                    '            <ul>'
-                    foreach ($model in $brand.model) {
-                        foreach ($car in $model.car) {
-                        '                <li><a href="../../' + $car.id + '/devel.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
-                        }
-                    }
-                    '            </ul>'
-                }
-            }
-            else
-            {
-                $_
-            }
-        } |
-        foreach {($_).replace('NEWPATH','../..')} |
-        foreach {($_).replace('HOMEPATH','..')} |
-        foreach {($_).replace('All Brands','Grid View')} |
-        foreach {($_).replace('./brands/index.html','./grid_brands.html')} |
-        foreach {($_).replace('</style>','.home-content{background:palegoldenrod;}</style>')} |
-        Set-Content "$countryFolder\devel.html"
-        Write-Verbose "   > $($country.id)/devel.html file"
-        #Write-Debug "     Add file $dir\brands\$($country.id)\index.html"
-    }
-}
-
-function Add-GforcesBrandIndex {
-    Write-Verbose ">> Brands:"
-    $tour = $configXml.tour.country
-    foreach ($country in $tour) {
-        foreach ($brand in $country.brand) {
-            $brandFolder = "$dir\brands\$($country.id)\$($brand.id)"
-            if (!(Test-Path "$brandFolder")) {
-                New-Item "$brandFolder" -Type Directory | Out-Null
-                Write-Debug "     Add folder $brandFolder"
+    foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            $countryFolder = "$dir\brands\$($country.id)"
+            if (!(Test-Path "$countryFolder")) {
+                New-Item "$countryFolder" -Type Directory | Out-Null
+                Write-Debug "     Add folder $countryFolder"
             }
             Get-Content "$dir\.src\html\index_template.html" |
             foreach {
                 if ($_ -match 'ADDCONTENT' ) {
                     '            <h5><a href="../index.html">(Up One Level)</a></h5>'
-                    '            <h4>' + $brand.name + '</h4>'
-                    '            <ul>'
-                    if ( !(Test-Path "$brandFolder") ) {
-                        New-Item "$brandFolder" -Type Directory | Out-Null
-                        Write-Debug "     Add folder $brandFolder"
+                    foreach ($brand in $country.brand) {
+                        '            <h4><a href="./' + $($brand.id) + '/index.html">' + $brand.name + '</a></h4>'
+                        '            <ul>'
+                        foreach ($model in $brand.model) {
+                            foreach ($car in $model.car) {
+                            '                <li><a href="../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
+                            }
+                        }
+                        '            </ul>'
                     }
-                    foreach ($model in $brand.model) {
-                    '                <li><a href="../../' + $country.id + '/' + $brand.id + '/' + $model.id + '/index.html" title="' + $model.name + '">'+ $model.name + '</a></li>'
-                    }
-                    '            </ul>'
                 }
                 else
                 {
                     $_
                 }
             } |
-            foreach {($_).replace('NEWPATH','../../..')} |
-            foreach {($_).replace('HOMEPATH','../..')} |
-            foreach {($_).replace('All Brands','Dark Interface')} |
-            foreach {($_).replace('./brands/index.html','./brand.html')} |
-            Set-Content "$brandFolder\index.html"
-            Write-Verbose "   > $($country.id)/$($brand.id)/index.html file"
-            #Write-Debug "     Add file $dir\brands\$($country.id)\$($brand.id)\index.html"
+            foreach {($_).replace('NEWPATH','../..')} |
+            foreach {($_).replace('HOMEPATH','..')} |
+            foreach {($_).replace('All Brands','Grid View')} |
+            foreach {($_).replace('./brands/index.html','./grid_brands.html')} |
+            Set-Content "$countryFolder\index.html"
+            # devel.html
+            Get-Content "$dir\.src\html\index_template.html" |
+            foreach {
+                if ($_ -match 'ADDCONTENT' ) {
+                    '            <h5><a href="../index.html">(Up One Level)</a></h5>'
+                    foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                        '            <h4>' + $brand.name + '</h4>'
+                        '            <ul>'
+                        foreach ($model in $brand.model) {
+                            foreach ($car in $model.car) {
+                            '                <li><a href="../../' + $car.id + '/devel.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
+                            }
+                        }
+                        '            </ul>'
+                    }
+                }
+                else
+                {
+                    $_
+                }
+            } |
+            foreach {($_).replace('NEWPATH','../..')} |
+            foreach {($_).replace('HOMEPATH','..')} |
+            foreach {($_).replace('All Brands','Grid View')} |
+            foreach {($_).replace('./brands/index.html','./grid_brands.html')} |
+            foreach {($_).replace('</style>','.home-content{background:palegoldenrod;}</style>')} |
+            Set-Content "$countryFolder\devel.html"
+            Write-Verbose "   > $($country.id)/devel.html file"
+            #Write-Debug "     Add file $dir\brands\$($country.id)\index.html"
         }
     }
 }
 
-function Add-GforcesModelIndex {
-    Write-Verbose ">> Models:"
+function Add-GforcesBrandIndex {
+    Write-Verbose ">> Brands:"
     $tour = $configXml.tour.country
-    foreach ($country in $tour) {
-        foreach ($brand in $country.brand) {
-            foreach ($model in $brand.model) {
-                $modelFolder = "$dir\brands\$($country.id)\$($brand.id)\$($model.id)"
-                if (!(Test-Path "$modelFolder")) {
-                    New-Item "$modelFolder" -Type Directory | Out-Null
-                    Write-Debug "     Add folder $modelFolder"
+    foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                $brandFolder = "$dir\brands\$($country.id)\$($brand.id)"
+                if (!(Test-Path "$brandFolder")) {
+                    New-Item "$brandFolder" -Type Directory | Out-Null
+                    Write-Debug "     Add folder $brandFolder"
                 }
                 Get-Content "$dir\.src\html\index_template.html" |
                 foreach {
                     if ($_ -match 'ADDCONTENT' ) {
                         '            <h5><a href="../index.html">(Up One Level)</a></h5>'
-                        '            <h4>' + $model.name + '</h4>'
+                        '            <h4>' + $brand.name + '</h4>'
                         '            <ul>'
-                        if ( !(Test-Path $modelFolder) ) {
-                            New-Item $modelFolder -Type Directory | Out-Null
-                            Write-Debug "     Add folder $modelFolder"
+                        if ( !(Test-Path "$brandFolder") ) {
+                            New-Item "$brandFolder" -Type Directory | Out-Null
+                            Write-Debug "     Add folder $brandFolder"
                         }
-                        foreach ($car in $model.car) {
-                            '                <li><a href="../../../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
+                        foreach ($model in $brand.model) {
+                        '                <li><a href="../../' + $country.id + '/' + $brand.id + '/' + $model.id + '/index.html" title="' + $model.name + '">'+ $model.name + '</a></li>'
                         }
                         '            </ul>'
                     }
@@ -255,13 +224,60 @@ function Add-GforcesModelIndex {
                         $_
                     }
                 } |
-                foreach {($_).replace('NEWPATH','../../../..')} |
-                foreach {($_).replace('HOMEPATH','../../..')} |
-                foreach {($_).replace('./brands/index.html','../brand.html')} |
-                foreach {($_).replace('.brands {','.brands {display:none;')} |
-                Set-Content "$modelFolder\index.html"
-                Write-Verbose "   > $($country.id)\$($brand.id)\$($model.id)\index.html"
-                #Write-Debug "     Add file $modelFolder\index.html"
+                foreach {($_).replace('NEWPATH','../../..')} |
+                foreach {($_).replace('HOMEPATH','../..')} |
+                foreach {($_).replace('All Brands','Dark Interface')} |
+                foreach {($_).replace('./brands/index.html','./brand.html')} |
+                Set-Content "$brandFolder\index.html"
+                Write-Verbose "   > $($country.id)/$($brand.id)/index.html file"
+                #Write-Debug "     Add file $dir\brands\$($country.id)\$($brand.id)\index.html"
+            }
+        }
+    }
+}
+
+function Add-GforcesModelIndex {
+    Write-Verbose ">> Models:"
+    $tour = $configXml.tour.country
+    foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                foreach ($model in $brand.model) {
+                    $modelFolder = "$dir\brands\$($country.id)\$($brand.id)\$($model.id)"
+                    if (!(Test-Path "$modelFolder")) {
+                        New-Item "$modelFolder" -Type Directory | Out-Null
+                        Write-Debug "     Add folder $modelFolder"
+                    }
+                    Get-Content "$dir\.src\html\index_template.html" |
+                    foreach {
+                        if ($_ -match 'ADDCONTENT' ) {
+                            '            <h5><a href="../index.html">(Up One Level)</a></h5>'
+                            '            <h4>' + $model.name + '</h4>'
+                            '            <ul>'
+                            if ( !(Test-Path $modelFolder) ) {
+                                New-Item $modelFolder -Type Directory | Out-Null
+                                Write-Debug "     Add folder $modelFolder"
+                            }
+                            foreach ($car in $model.car) {
+                                '                <li><a href="../../../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
+                            }
+                            '            </ul>'
+                        }
+                        else
+                        {
+                            $_
+                        }
+                    } |
+                    foreach {($_).replace('NEWPATH','../../../..')} |
+                    foreach {($_).replace('HOMEPATH','../../..')} |
+                    foreach {($_).replace('./brands/index.html','../brand.html')} |
+                    foreach {($_).replace('.brands {','.brands {display:none;')} |
+                    Set-Content "$modelFolder\index.html"
+                    Write-Verbose "   > $($country.id)\$($brand.id)\$($model.id)\index.html"
+                    #Write-Debug "     Add file $modelFolder\index.html"
+                }
             }
         }
     }
@@ -269,204 +285,218 @@ function Add-GforcesModelIndex {
 
 function Add-GforcesGridBrands {
     Write-Verbose "-------------------- Grid View -------------------- "
-    Write-Verbose "Countries:"
     # Generate the HTML files with the logos in a grid
     $tour = $configXml.tour.country
     $param1 = 0
     $param2 = 0
     $tempfile = "$dir\.src\html\index.temp"
-    foreach ($country in $tour) {
-        Write-Verbose ">> $($country.id)"
-        $brandsfile = "$dir\brands\$($country.id)\grid_brands.html"
-        $morebrandsfile = "$dir\brands\$($country.id)\grid_more.html"
-        New-Item -ItemType File $tempfile -Force | Out-Null
-        foreach ($brand in $country.brand) {
-            $brand_name = $brand.id
-            Add-Content $tempfile ('                <article class="one-fifth" style="transform:translate(' + $param1 + 'px,' + $param2 + 'px); -webkit-transform: translate3d(' + $param1 + 'px,' + $param2 + 'px,0px);"><a href="./' + $($brand.id) + '/brand.html" class="project-meta" title="Click me"><img src="../../shared/html_brands/img/logos/' + $($brand.id) + '.jpg" alt="' + $($brand.name) + '"/></a><a href="./' + $($brand.id) + '/brand.html" class="project-meta"><h5 class="title">' + $($brand.name) + '</h5></a></article>')
-            $param1 = $param1 + 192
-            if ($param1 -eq 960) {
-                $param1 = 0
-                $param2 = $param2 + 220
+        foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            $brandsfile = "$dir\brands\$($country.id)\grid_brands.html"
+            $morebrandsfile = "$dir\brands\$($country.id)\grid_more.html"
+            New-Item -ItemType File $tempfile -Force | Out-Null
+            foreach ($brand in $country.brand) {
+                $brand_name = $brand.id
+                Add-Content $tempfile ('                <article class="one-fifth" style="transform:translate(' + $param1 + 'px,' + $param2 + 'px); -webkit-transform: translate3d(' + $param1 + 'px,' + $param2 + 'px,0px);"><a href="./' + $($brand.id) + '/brand.html" class="project-meta" title="Click me"><img src="../../shared/html_brands/img/logos/' + $($brand.id) + '.jpg" alt="' + $($brand.name) + '"/></a><a href="./' + $($brand.id) + '/brand.html" class="project-meta"><h5 class="title">' + $($brand.name) + '</h5></a></article>')
+                $param1 = $param1 + 192
+                if ($param1 -eq 960) {
+                    $param1 = 0
+                    $param2 = $param2 + 220
+                }
             }
+            $template_content = Get-Content $dir\.src\html\brands_index_template.html
+            $brands_content = Get-Content $tempfile
+            $template_content | foreach {
+                if ($_ -match 'ADDCONTENT' ) {
+                    $brands_content
+                } elseif ($_ -match 'PARAM3') {
+                    ($_).replace('PARAM3',$param2)
+                } else {
+                    $_
+                }
+            } | Set-Content $brandsfile
+            Write-Verbose "   > $($country.id)\grid_brands.html"
+            #Write-Debug "     Add file $brandsfile"
+            Remove-Item $tempfile -Force
+            # Now we need to create grid_more.html, which is the same as grid_brands.html but changing the the links to more_brands.html
+            Get-Content $brandsfile |
+            foreach { ($_).replace('brand.html','grid_more.html') } |
+            Out-File -Encoding utf8 $morebrandsfile
+            Write-Verbose "   > $($country.id)\grid_more.html"
+            #Write-Debug "     Add file $morebrandsfile"
         }
-        $template_content = Get-Content $dir\.src\html\brands_index_template.html
-        $brands_content = Get-Content $tempfile
-        $template_content | foreach {
-            if ($_ -match 'ADDCONTENT' ) {
-                $brands_content
-            } elseif ($_ -match 'PARAM3') {
-                ($_).replace('PARAM3',$param2)
-            } else {
-                $_
-            }
-        } | Set-Content $brandsfile
-        Write-Verbose "   > $($country.id)\grid_brands.html"
-        #Write-Debug "     Add file $brandsfile"
-        Remove-Item $tempfile -Force
-        # Now we need to create grid_more.html, which is the same as grid_brands.html but changing the the links to more_brands.html
-        Get-Content $brandsfile |
-        foreach { ($_).replace('brand.html','grid_more.html') } |
-        Out-File -Encoding utf8 $morebrandsfile
-        Write-Verbose "   > $($country.id)\grid_more.html"
-        #Write-Debug "     Add file $morebrandsfile"
     }
 }
 
 function Add-GforcesBrandHtml {
     Write-Verbose "-------------------- Dark Interface -------------------- "
-    Write-Verbose "HTML:"
+    Write-Verbose ">> HTML:"
     $tour = $configXml.tour.country
-    foreach ($country in $tour) {
-        foreach ($brand in $country.brand) {
-            Write-Verbose ">> $($brand.id)"
-            $first_car = $brand.model.car[0].id
-            $brand_name = $brand.id
-            $brandname = "$($country.id)/$($brand.id)"
-            # Create brand.html for each brand
-            $template_content = Get-Content $dir\.src\html\brand_template.html
-            $template_content |
-            foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
-            foreach { ($_).replace('BRANDNAME',$brandname) } |
-            foreach { ($_).replace('SCENENAME',$first_car) } |
-            Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\brand.html
-            Write-Debug "   > $($country.id)\$brand_name\brand.html"
-            # Create more_brands.html for each brand
-            $template_content |
-            foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
-            foreach { ($_).replace('BRANDNAME',$brandname) } |
-            foreach { ($_).replace('SCENENAME',($first_car + ',null,more')) } |
-            Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\more_brands.html
-            Write-Debug "   > $($country.id)\$brand_name\more_brand.html"
-            # Create devel\brand.html
-            $template_content |
-            foreach { ($_).replace('SERVERNAME','../../..') } |
-            foreach { ($_).replace('SCENENAME',$first_car) } |
-            foreach { ($_).replace('BRANDNAME',$brandname) } |
-            foreach { ($_).replace('brand.xml','devel_brand.xml') } |
-            Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\devel_brand.html
-            Write-Debug "   > $($country.id)\$brand_name\devel_brand.html"
-            # Create devel\more_brands.html
-            $template_content |
-            foreach { ($_).replace('SERVERNAME','../..') } |
-            foreach { ($_).replace('BRANDNAME',$brand_name) } |
-            foreach { ($_).replace('SCENENAME',($first_car + ',null,more')) } |
-            foreach { ($_).replace('brand.xml','devel_brand.xml') } |
-            Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\devel_more_brands.html
-            Write-Debug "   > $($country.id)\$brand_name\devel_more_brand.html"
+    foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                $first_car = $brand.model.car[0].id
+                $brand_name = $brand.id
+                $brandname = "$($country.id)/$($brand.id)"
+                # Create brand.html for each brand
+                $template_content = Get-Content $dir\.src\html\brand_template.html
+                $template_content |
+                foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
+                foreach { ($_).replace('BRANDNAME',$brandname) } |
+                foreach { ($_).replace('SCENENAME',$first_car) } |
+                Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\brand.html
+                Write-Verbose "   > $($country.id)\$brand_name\brand.html"
+                # Create more_brands.html for each brand
+                $template_content |
+                foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
+                foreach { ($_).replace('BRANDNAME',$brandname) } |
+                foreach { ($_).replace('SCENENAME',($first_car + ',null,more')) } |
+                Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\more_brands.html
+                Write-Debug "   > $($country.id)\$brand_name\more_brand.html"
+                # Create devel\brand.html
+                $template_content |
+                foreach { ($_).replace('SERVERNAME','../../..') } |
+                foreach { ($_).replace('SCENENAME',$first_car) } |
+                foreach { ($_).replace('BRANDNAME',$brandname) } |
+                foreach { ($_).replace('brand.xml','devel_brand.xml') } |
+                Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\devel_brand.html
+                Write-Debug "   > $($country.id)\$brand_name\devel_brand.html"
+                # Create devel\more_brands.html
+                $template_content |
+                foreach { ($_).replace('SERVERNAME','../..') } |
+                foreach { ($_).replace('BRANDNAME',$brand_name) } |
+                foreach { ($_).replace('SCENENAME',($first_car + ',null,more')) } |
+                foreach { ($_).replace('brand.xml','devel_brand.xml') } |
+                Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\devel_more_brands.html
+                Write-Debug "   > $($country.id)\$brand_name\devel_more_brand.html"
+            }
         }
     }
 }
 
 function Add-GforcesBrandItemsXml {
-    Write-Verbose "XML:"
-    Write-Verbose ">> items.xml"
+    Write-Verbose ">> XML:"
     $tour = $configXml.tour.country
-    foreach ($country in $tour) {
-        foreach ($brand in $country.brand) {
-            $itemsFile = "$dir\brands\$($country.id)\$($brand.id)\content\items.xml"
-            New-Item -ItemType File $itemsFile -Force | Out-Null
-            Add-Content $itemsFile ('<krpano>')
-            $order = 0
-            foreach ($model in $brand.model) {
-                foreach ($car in $model.car | where {
-                $_.id -notlike 'hyundai_i1' -and
-                $_.id -notlike 'land_rover_range_rover_sport' -and
-                $_.id -notlike 'nissan_370z_roadster_open' -and
-                $_.id -notlike 'nissan_leaf' -and
-                $_.id -notlike 'nissan_note' -and
-                $_.id -notlike 'nissan_qashqai' -and
-                $_.id -notlike 'volvo_v70'
-                }){
-                    $y_value = 2 + ($order * 50)
-                    Add-Content $itemsFile ('<layer name    ="container_1_item_' + $car.id + '"')
-                    Add-Content $itemsFile ('       html    ="[h1]' + $car.name + '[/h1]"')
-                    Add-Content $itemsFile ('       onclick ="activatepano(' + ($car.id) + ',scenevariation);"')
-                    Add-Content $itemsFile ('       style   ="container_1_item_style"')
-                    Add-Content $itemsFile ('       y       ="' + $y_value + '"')
-                    Add-Content $itemsFile '       />'
-                    $order = $order + 1
+    foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                $itemsFile = "$dir\brands\$($country.id)\$($brand.id)\content\items.xml"
+                New-Item -ItemType File $itemsFile -Force | Out-Null
+                Add-Content $itemsFile ('<krpano>')
+                $order = 0
+                foreach ($model in $brand.model) {
+                    foreach ($car in $model.car | where {
+                    $_.id -notlike 'hyundai_i1' -and
+                    $_.id -notlike 'land_rover_range_rover_sport' -and
+                    $_.id -notlike 'nissan_370z_roadster_open' -and
+                    $_.id -notlike 'nissan_leaf' -and
+                    $_.id -notlike 'nissan_note' -and
+                    $_.id -notlike 'nissan_qashqai' -and
+                    $_.id -notlike 'volvo_v70'
+                    }){
+                        $y_value = 2 + ($order * 50)
+                        Add-Content $itemsFile ('<layer name    ="container_1_item_' + $car.id + '"')
+                        Add-Content $itemsFile ('       html    ="[h1]' + $car.name + '[/h1]"')
+                        Add-Content $itemsFile ('       onclick ="activatepano(' + ($car.id) + ',scenevariation);"')
+                        Add-Content $itemsFile ('       style   ="container_1_item_style"')
+                        Add-Content $itemsFile ('       y       ="' + $y_value + '"')
+                        Add-Content $itemsFile '       />'
+                        $order = $order + 1
+                    }
                 }
+                Add-Content $itemsFile ('</krpano>')
+                $scroll_height = $order * 50
+                # Update scroll height after removing some scenes
+                $startup_content = Get-Content "$dir\shared\include_brand\startup\index.xml"
+                $startup_content |
+                foreach { ($_).replace('SCROLLHEIGHT',$scroll_height) } |
+                Out-File -Encoding utf8 "$dir\shared\include_brand\startup\index.xml"
+                Write-Verbose "   > $($country.id)\$($brand.id)\content\items.xml"
+                # Copy the corresponding logo
+                Copy-Item "$dir\shared\html_brands\img\logos\$($brand.id).jpg" "$dir\brands\$($country.id)\$($brand.id)\content\thumb.jpg"
             }
-            Add-Content $itemsFile ('</krpano>')
-            $scroll_height = $order * 50
-            # Update scroll height after removing some scenes
-            $startup_content = Get-Content "$dir\shared\include_brand\startup\index.xml"
-            $startup_content |
-            foreach { ($_).replace('SCROLLHEIGHT',$scroll_height) } |
-            Out-File -Encoding utf8 "$dir\shared\include_brand\startup\index.xml"
-            Write-Verbose "   > $($country.id)\$($brand.id)\content\items.xml"
-            # Copy the corresponding logo
-            Copy-Item "$dir\shared\html_brands\img\logos\$($brand.id).jpg" "$dir\brands\$($country.id)\$($brand.id)\content\thumb.jpg"
         }
     }
 }
 
 function Add-GforcesBrandDevelXml {
-    Write-Verbose ">> devel.xml"
     $tour = $configXml.tour.country
-    foreach ($country in $tour) {
-        foreach ($brand in $country.brand) {
-            $develFile = "$dir\brands\$($country.id)\$($brand.id)\devel_brand.xml"
-            New-Item -ItemType File $develFile -Force | Out-Null
-            Add-Content $develFile '<?xml version="1.0" encoding="UTF-8"?>'
-            Add-Content $develFile ('<krpano version="' + $krVersion + '">')
-            Add-Content $develFile '<krpano logkey="true" />'
-            Add-Content $develFile '    <develmode enabled="true" />'
-            Add-Content $develFile '    <!-- Content -->'
-            Add-Content $develFile ('    <include url="%CURRENTXML%/content/' + $(Get-Item $dir\brands\$($country.id)\$($brand.id)\content\items.xml).BaseName + '.xml" />')
-            foreach ($model in $brand.model) {
-                foreach ($car in $model.car) {
-                    Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
+    foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                $develFile = "$dir\brands\$($country.id)\$($brand.id)\devel_brand.xml"
+                New-Item -ItemType File $develFile -Force | Out-Null
+                Add-Content $develFile '<?xml version="1.0" encoding="UTF-8"?>'
+                Add-Content $develFile ('<krpano version="' + $krVersion + '">')
+                Add-Content $develFile '<krpano logkey="true" />'
+                Add-Content $develFile '    <develmode enabled="true" />'
+                Add-Content $develFile '    <!-- Content -->'
+                Add-Content $develFile ('    <include url="%CURRENTXML%/content/' + $(Get-Item $dir\brands\$($country.id)\$($brand.id)\content\items.xml).BaseName + '.xml" />')
+                foreach ($model in $brand.model) {
+                    foreach ($car in $model.car) {
+                        Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
+                    }
                 }
-            }
-            Add-Content $develFile '    <!-- Include -->'
-            $includefolder = dir "$dir\shared\include_brand\"  |
-            foreach { Add-Content $develFile ('    <include url="%SWFPATH%/include_brand/' + $_.BaseName + '/index.xml" />') }
-            Add-Content $develFile '    <!-- Scenes -->'
-            foreach ($model in $brand.model) {
-                foreach ($car in $model.car) {
-                    Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/scenes/scene.xml" />')
+                Add-Content $develFile '    <!-- Include -->'
+                $includefolder = dir "$dir\shared\include_brand\"  |
+                foreach { Add-Content $develFile ('    <include url="%SWFPATH%/include_brand/' + $_.BaseName + '/index.xml" />') }
+                Add-Content $develFile '    <!-- Scenes -->'
+                foreach ($model in $brand.model) {
+                    foreach ($car in $model.car) {
+                        Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/scenes/scene.xml" />')
+                    }
                 }
+                Add-Content $develFile '</krpano>'
+                Write-Verbose "   > $($country.id)\$($brand.id)\devel_brand.xml"
             }
-            Add-Content $develFile '</krpano>'
-            Write-Verbose "   > $($country.id)\$($brand.id)\devel_brand.xml"
         }
     }
 }
 
 function Add-GforcesBrandXml {
-    Write-Verbose ">> brand.xml"
     $tour = $configXml.tour.country
-    foreach ($country in $tour) {
-        foreach ($brand in $country.brand) {
-            $tourFile = "$dir\brands\$($country.id)\$($brand.id)\brand.xml"
-            New-Item -ItemType File $tourFile -Force | Out-Null
-            Add-Content $tourFile '<?xml version="1.0" encoding="UTF-8"?>'
-            Add-Content $tourFile ('<krpano version="' + $krver + '">')
-            Add-Content $tourFile '<krpano logkey="true" />'
-            # Add 'items.xml' file inside 'brands' directory
-            $contentFolder = Get-Item "$dir\brands\$($country.id)\$($brand.id)\content\items.xml"
-            Add-ToTourXml $contentFolder
-            # Add 'content/index.xml' file inside each car belonging to the same brand
-            foreach ($model in $brand.model) {
-                foreach ($car in $model.car) {
-                    #Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
-                    $contentFolder = Get-Item "$dir\$($car.id)\files\content\index.xml"
-                    Add-ToTourXml $contentFolder
+    foreach ($item in $tourArray) {
+        $countryId = ($item -split "_")[0]
+        $brandId = ($item -split "_")[1]
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                $tourFile = "$dir\brands\$($country.id)\$($brand.id)\brand.xml"
+                New-Item -ItemType File $tourFile -Force | Out-Null
+                Add-Content $tourFile '<?xml version="1.0" encoding="UTF-8"?>'
+                Add-Content $tourFile ('<krpano version="' + $krver + '">')
+                Add-Content $tourFile '<krpano logkey="true" />'
+                # Add 'items.xml' file inside 'brands' directory
+                $contentFolder = Get-Item "$dir\brands\$($country.id)\$($brand.id)\content\items.xml"
+                Add-ToTourXml $contentFolder
+                # Add 'content/index.xml' file inside each car belonging to the same brand
+                foreach ($model in $brand.model) {
+                    foreach ($car in $model.car) {
+                        #Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
+                        $contentFolder = Get-Item "$dir\$($car.id)\files\content\index.xml"
+                        Add-ToTourXml $contentFolder
+                    }
                 }
-            }
-            # Add XML files inside 'include' folder
-            $includeFolder = Get-ChildItem "$dir\shared\include_brand\*\*.xml" -Exclude coordfinder, editor_and_options
-            Add-ToTourXml $includeFolder
-            # Add 'scene.xml' file inside each car belonging to the same brand
-            foreach ($model in $brand.model) {
-                foreach ($car in $model.car) {
-                    $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
-                    Add-ToTourXml $scenesFolder
+                # Add XML files inside 'include' folder
+                $includeFolder = Get-ChildItem "$dir\shared\include_brand\*\*.xml" -Exclude coordfinder, editor_and_options
+                Add-ToTourXml $includeFolder
+                # Add 'scene.xml' file inside each car belonging to the same brand
+                foreach ($model in $brand.model) {
+                    foreach ($car in $model.car) {
+                        $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
+                        Add-ToTourXml $scenesFolder
+                    }
                 }
+                Add-Content $tourFile '</krpano>'
+                Write-Verbose "   > $($country.id)\$($brand.id)\brand.html"
             }
-            Add-Content $tourFile '</krpano>'
-            Write-Verbose "   > $($country.id)\$($brand.id)\brand.html"
         }
     }
 }
