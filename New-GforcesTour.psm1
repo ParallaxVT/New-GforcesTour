@@ -39,20 +39,25 @@ function New-GforcesTour {
         # Source config.xml
         [xml]$configXml = Get-Content $config
         Write-Verbose "-------------------- Checking --------------------"
+        $countryNumber = 0
+        $brandNumber = 0
+        $modelNumber = 0
+        $carNumber = 0
         foreach ( $country in $configXml.tour.country ) {
+            $countryNumber = $countryNumber + 1
             foreach ( $brand in $country.brand) {
+                $brandNumber = $brandNumber + 1
                 foreach ($model in $brand.model) {
+                    $modelNumber = $modelNumber + 1
                     foreach ($car in $model.car) {
-                        Write-Verbose ">> $($car.id)"
+                        $carNumber = $carNumber + 1
                         # Check that there is a panorama for each car in config.xml
                         if(!(Test-Path .\.src\panos\$($car.id).jpg )) { Throw "Pano .src\panos\$($car.id).jpg NOT FOUND." }
-                        #Write-Verbose "   > .src\panos\$($car.id).jpg"
                         # Check that every car has tites and scene.xml
                         if(!(Test-Path .\$($car.id)\files )) { Throw "Folder .\$($car.id)\files NOT FOUND. Did you create the tiles correctly?" }
                         if(!(Test-Path .\$($car.id)\files\scenes )) { Throw "Folder .\$($car.id)\files\scenes NOT FOUND. Did you create the tiles correctly?" }
                         if(!(Test-Path .\$($car.id)\files\scenes\tiles )) { Throw "Folder .\$($car.id)\files\scenes\tiles NOT FOUND. Did you create the tiles correctly?" }
                         if(!(Test-Path .\$($car.id)\files\scenes\scene.xml )) { Throw "File .\$($car.id)\files\scenes\scene.xml NOT FOUND. Did you create the tiles correctly?" }
-                        #Write-Verbose "    > $($car.id)"
                         # Check that the panorama names has 3 underscores
                         $underscores = ((($car.id).ToString()).split("_")).count
                         if($underscores -ne "4") { Throw "The file $($car.id) doesn't have 4 underscores, it has $underscores. Plaese raname it. "}
@@ -68,6 +73,10 @@ function New-GforcesTour {
                 throw "The following folder is obsolete: $($_.FullName)"
             }
         }
+        Write-Verbose ">> Countries: $countryNumber"
+        Write-Verbose ">> Makes:     $brandNumber"
+        Write-Verbose ">> Models:    $modelNumber"
+        Write-Verbose ">> Cars:      $carNumber"
         Write-Verbose "-------------------- Cars --------------------"
     }
     Process {
