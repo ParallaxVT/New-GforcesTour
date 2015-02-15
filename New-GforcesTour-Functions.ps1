@@ -127,7 +127,9 @@ function Add-GforcesCountryIndex {
     foreach ($item in $tourArray) {
         $countryId = ($item -split "_")[0]
         $brandId = ($item -split "_")[1]
-        foreach ($country in $tour | where { $_.id -like $countryId } ) {
+        [Array]$countryArray += $countryId
+        $countrArray = $countrArray | sort -Unique
+        foreach ($country in $tour | where { $_.id -like $countryArray } ) {
             $countryFolder = "$dir\brands\$($country.id)"
             if (!(Test-Path "$countryFolder")) {
                 New-Item "$countryFolder" -Type Directory | Out-Null
