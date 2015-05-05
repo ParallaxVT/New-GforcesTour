@@ -120,6 +120,8 @@ function New-GforcesTour {
         }
     # Add 'brands/index.html'
     Add-GfocesBrandsIndex
+    # Add 'brands/recent.html
+    Add-GforcesRecent
     # Add 'brands/country/index.html'
     Add-GforcesCountryIndex
     # Add 'brands/country/brand/index.html'

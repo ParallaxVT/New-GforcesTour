@@ -193,6 +193,37 @@ function Add-GforcesCountryIndex {
     }
 }
 
+function Add-GforcesRecent {
+    Get-Content "$dir\.src\html\index_template.html" |
+    foreach {
+        if ($_ -match 'ADDCONTENT' ) {
+            '            <h4>Recent Cars - DEVEL</h4>'
+            '            <ul>'
+            foreach ($car in $tourIDArray) {
+                    '                <li><a href="../' + $car + '/devel.html" title="' + $car + '">'+ $car + '</a></li>'
+            }
+            '            </ul>'
+            '            <h4>Recent Cars - WEB</h4>'
+            '            <ul>'
+            foreach ($car in $tourIDArray) {
+                    '                <li><a href="SERVERNAME/' + $car + '/index.html" title="' + $car + '">'+ $car + '</a></li>'
+            }
+            '            </ul>'
+        }
+        else
+        {
+            $_
+        }
+    } |
+    foreach {($_).replace('NEWPATH','..')} |
+    foreach {($_).replace('HOMEPATH','.')} |
+    foreach {($_).replace('./brands/index.html','./index.html')} |
+    foreach {($_).replace('.brands {','.brands {display:none;')} |
+    foreach {($_).replace('SERVERNAME',$configXML.tour.url) } |
+    Set-Content "$dir\brands\recent.html"
+    Write-Verbose ">> recent.html"
+}
+
 function Add-GforcesBrandIndex {
     Write-Verbose ">> Brands:"
     $tour = $configXml.tour.country
