@@ -188,7 +188,6 @@ function Add-GforcesCountryIndex {
             foreach {($_).replace('</style>','.home-content{background:palegoldenrod;}</style>')} |
             Set-Content "$countryFolder\devel.html"
             Write-Verbose "   > $($country.id)/devel.html file"
-            #Write-Debug "     Add file $dir\brands\$($country.id)\index.html"
         }
     }
 }
@@ -532,4 +531,52 @@ function Add-GforcesBrandXml {
             }
         }
     }
+}
+
+function Rename-CarsWithWrongName {
+    # Array containing all the cars to be ranamed
+    $renameTour = $configXml.tour.rename.car
+    foreach ($renameCar in $renameTour) {
+        [Array]$renameArray += $renameCar
+    }
+    # Check if any of the cars to be renamed are in the cars passed in the pipeline (Intersect arrays)
+    $renameThisCars = $tourIDArray + $renameArray.id | select -Unique
+    $renameThisCars = $tourIDArray | Where-Object { $renameArray.id -contains $_ }
+    if ($renameThisCars -notlike "") {
+        Write-Verbose "-------------------- Rename Cars --------------------"
+    }
+    #write-host $renameThisCars
+    # Run 2 foreach loops to get the 'renameTo' attribute
+    foreach ($item in $renameThisCars) {
+        foreach ($renameCar in $renameArray | where {$_.id -like $item})  {
+            $carID = $($renameCar.id)
+            $carRenameTo = $($renameCar.renameTo)
+            #Write-Host $carID
+            #Write-Host $carRenameTo
+            # Delete folder with the wrong name     
+            if ( Test-Path $dir\$carRenameTo ) {
+                Remove-Item $dir\$carRenameTo -Recurse -Force
+            }
+            # Create a new folder with the wrong name with a folder named 'files' inside it
+            New-Item -Path $dir\$carRenameTo -ItemType Directory | Out-Null
+            New-Item -Path $dir\$carRenameTo\files -ItemType Directory | Out-Null
+            # Copy original 'index.html' file replacing wrong name for the right one
+            $index_content = Get-Content $dir\$carID\index.html
+            $index_content |
+            foreach { ($_).replace($CarID,$carRenameTo ) } |
+            Out-File -Encoding utf8 $dir\$carRenameTo\index.html
+            # Copy original 'tour.xml' file replacing wrong name for the right one
+            $index_content = Get-Content $dir\$carID\files\tour.xml
+            $index_content |
+            foreach { ($_).replace($CarID + '"',$carRenameTo + '"' ) } |
+            Out-File -Encoding utf8 $dir\$carRenameTo\files\tour.xml
+            Write-Verbose ">> $carID > $carRenameTo"
+        }
+    }
+    # Check if the following things exist:
+    #  Folder with the wrong car name 
+    #  index.html
+    #  'files' folder
+    #  tour.xml
+    # If any of this is missing print a warning to run the script for an specific car
 }

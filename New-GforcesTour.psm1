@@ -66,11 +66,19 @@ function New-GforcesTour {
             }
         }
         # Check there are no folders which don't belong to an existing panorama
+        $tour = $configXml.tour.rename.car.renameTo
+        foreach ($car in $tour) {
+        [Array]$renameToArray += $car
+        }
         Get-ChildItem . -Exclude .src, .no_scenes, brands, shared -Directory |
         foreach {
-            $carFolder = ".src/panos/$($_.BaseName).jpg"
+            $carID = $($_.BaseName)
+            $carFolder = ".src/panos/$carID.jpg"
             if(!(Test-Path $($carFolder))) {
-                throw "The following folder is obsolete: $($_.FullName)"
+                # Cars in the rename section aren't obsolete
+                if ($renameToArray -notcontains $carID) {
+                    throw "The following folder is obsolete: $($_.FullName)"
+                }
             }
         }
         Write-Verbose ">> Countries: $countryNumber"
@@ -101,6 +109,8 @@ function New-GforcesTour {
                             Add-GforcesTourXml
                             # Add each car to an array
                             [Array]$tourArray += $countrycode + "_" + $brand
+                            # The variable $tour doesn't contain the renamed cars
+                            [Array]$tourIDArray += $tour
                         }
                     }
                 }
@@ -108,8 +118,10 @@ function New-GforcesTour {
         }
     }
     End {
+    # Don't run the script ONLY for a renamed car. It's ok if is included with others, but it break things if it's alone
+    if ($tourArray -like "") {Throw "$($tourName.BaseName) is a renamed car. Please choose a different car."}
     # Remove duplicates from the array
-    $tourArray = $tourArray | Split-String "," | sort -Unique
+    $tourArray = $tourArray | Split-String "," | sort -Unique 
     # Check that all the car folders contain any HTML file.
     # If there isn't one, that would mean that I generated the tiles for a car, but I didn't add the details to config.xml
     # and run the script to generate the tour files
@@ -138,5 +150,7 @@ function New-GforcesTour {
     Add-GforcesBrandDevelXml
     # Add 'brands/country/brand/brand.xml'
     Add-GforcesBrandXml
+    # Fix some cars with the wrong name
+    Rename-CarsWithWrongName
     }
 }
