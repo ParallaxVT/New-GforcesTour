@@ -1,11 +1,9 @@
-if (Get-Module New-GforcesTour) { return }
 
 #Push-Location $psScriptRoot
 #. .\New-GforcesTour-Functions.ps1
-. C:\Users\Rafael\Documents\WindowsPowerShell\Modules\New-GforcesTour\New-GforcesTour-Functions.ps1
 #Pop-Location
 
-function New-GforcesTour {
+#function New-GforcesTour {
     <#
     .SYNOPSIS
 
@@ -26,6 +24,7 @@ function New-GforcesTour {
         #[string]$TourName
         )
     Begin {
+        . C:\Users\Rafael\Documents\WindowsPowerShell\Scripts\gforces\New-GforcesTour\New-GforcesTour-Functions.ps1
         #$DebugPreference = "Continue"
         # Stop if there is any error
         $ErrorActionPreference = "Stop"
@@ -153,4 +152,4 @@ function New-GforcesTour {
     # Fix some cars with the wrong name
     Rename-CarsWithWrongName
     }
-}
+#}
