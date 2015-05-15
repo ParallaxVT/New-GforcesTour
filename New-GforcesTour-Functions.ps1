@@ -158,7 +158,7 @@ function Add-GforcesCountryIndex {
             foreach {($_).replace('NEWPATH','../..')} |
             foreach {($_).replace('HOMEPATH','..')} |
             foreach {($_).replace('All Brands','Grid View')} |
-            foreach {($_).replace('./brands/index.html','./grid_brands.html')} |
+            foreach {($_).replace('./brands/index.html','./grid_more.html')} |
             Set-Content "$countryFolder\index.html"
             # devel.html
             Get-Content "$dir\.src\html\index_template.html" |
@@ -184,7 +184,7 @@ function Add-GforcesCountryIndex {
             foreach {($_).replace('NEWPATH','../..')} |
             foreach {($_).replace('HOMEPATH','..')} |
             foreach {($_).replace('All Brands','Grid View')} |
-            foreach {($_).replace('./brands/index.html','./grid_brands.html')} |
+            foreach {($_).replace('./brands/index.html','./grid_more.html')} |
             foreach {($_).replace('</style>','.home-content{background:palegoldenrod;}</style>')} |
             Set-Content "$countryFolder\devel.html"
             Write-Verbose "   > $($country.id)/devel.html file"
