@@ -440,12 +440,12 @@ function Add-GforcesBrandItemsXml {
                         Add-Content $itemsFile ('       onclick ="activatepano(' + ($car.id) + ',scenevariation);"')
                         Add-Content $itemsFile ('       style   ="container_1_item_style"')
                         Add-Content $itemsFile ('       y       ="' + $y_value + '"')
-                        Add-Content $itemsFile ('      />')
+                        Add-Content $itemsFile ('       />')
                         $order = $order + 1
                     }
-                    # Update scroll height after removing some scenes
-                    Add-Content $itemsFile ('<data name="number_of_scenes">' + $order + '</data>')
                 }
+                # Update scroll height after removing some scenes
+                Add-Content $itemsFile ('<data name="number_of_scenes">' + $order + '</data>')
                 Add-Content $itemsFile ('</krpano>')
                 Write-Verbose "   > $($country.id)\$($brand.id)\content\items.xml"
                 # Copy the corresponding logo
