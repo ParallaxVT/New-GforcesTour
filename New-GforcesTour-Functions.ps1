@@ -433,8 +433,9 @@ function Add-GforcesBrandItemsXml {
                     $_.id -notlike 'volvo_v70'
                     }){
                         $y_value = 2 + ($order * 50)
+                        $newCarName= $car.name -replace ' - 20.*','' 
                         Add-Content $itemsFile ('<layer name    ="container_1_item_' + $car.id + '"')
-                        Add-Content $itemsFile ('       html    ="[h1]' + $car.name + '[/h1]"')
+                        Add-Content $itemsFile ('       html    ="[h1]' + $newCarName + '[/h1]"')
                         Add-Content $itemsFile ('       onclick ="activatepano(' + ($car.id) + ',scenevariation);"')
                         Add-Content $itemsFile ('       style   ="container_1_item_style"')
                         Add-Content $itemsFile ('       y       ="' + $y_value + '"')
