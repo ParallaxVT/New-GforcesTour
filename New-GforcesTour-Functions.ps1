@@ -442,14 +442,10 @@ function Add-GforcesBrandItemsXml {
                         Add-Content $itemsFile '       />'
                         $order = $order + 1
                     }
+                    # Update scroll height after removing some scenes
+                    Add-Content $itemsFile ('<data name="number_of_scenes">' + $order + '</data>')
                 }
                 Add-Content $itemsFile ('</krpano>')
-                $scroll_height = $order * 50
-                # Update scroll height after removing some scenes
-                $startup_content = Get-Content "$dir\shared\include_brand\startup\index.xml"
-                $startup_content |
-                foreach { ($_).replace('SCROLLHEIGHT',$scroll_height) } |
-                Out-File -Encoding utf8 "$dir\shared\include_brand\startup\index.xml"
                 Write-Verbose "   > $($country.id)\$($brand.id)\content\items.xml"
                 # Copy the corresponding logo
                 Copy-Item "$dir\shared\html_brands\img\logos\$($brand.id).jpg" "$dir\brands\$($country.id)\$($brand.id)\content\thumb.jpg"
