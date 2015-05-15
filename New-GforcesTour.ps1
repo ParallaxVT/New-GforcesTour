@@ -20,7 +20,8 @@
         Mandatory=$True,
         ValueFromPipeline=$True,
         ValueFromPipelineByPropertyName=$true)]
-        $TourName
+        $TourName,
+        [switch]$BrandFolderOnly
         #[string]$TourName
         )
     Begin {
@@ -98,14 +99,16 @@
                             # Extract information from the car file name
                             $countrycode = ($tour -split "_")[0]
                             $brand = ($tour -split "_")[1]
-                            # Add index.html and devel.html
-                            Add-GforcesHtmlFiles
-                            # Add 'car/files/content/coord.xml' and 'car/files/content/panolist.xml'
-                            Add-GforcesContent
-                            # Add 'car/files/devel.xml'
-                            Add-GforcesDevelXml
-                            # Add 'car/file/tour.xml'
-                            Add-GforcesTourXml
+                            if (!($BrandFolderOnly)) {
+                                # Add index.html and devel.html
+                                Add-GforcesHtmlFiles
+                                # Add 'car/files/content/coord.xml' and 'car/files/content/panolist.xml'
+                                Add-GforcesContent
+                                # Add 'car/files/devel.xml'
+                                Add-GforcesDevelXml
+                                # Add 'car/file/tour.xml'
+                                Add-GforcesTourXml
+                            }
                             # Add each car to an array
                             [Array]$tourArray += $countrycode + "_" + $brand
                             # The variable $tour doesn't contain the renamed cars
