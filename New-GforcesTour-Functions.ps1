@@ -499,6 +499,8 @@ function Add-GforcesBrandXml {
         foreach ($country in $tour | where { $_.id -like $countryId } ) {
             foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
                 $tourFile = "$dir\brands\$($country.id)\$($brand.id)\brand.xml"
+                # Variable country code is used by the function Add-ToTourXml
+                $countrycode = $countryId
                 New-Item -ItemType File $tourFile -Force | Out-Null
                 Add-Content $tourFile '<?xml version="1.0" encoding="UTF-8"?>'
                 Add-Content $tourFile ('<krpano version="' + $krver + '">')
