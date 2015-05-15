@@ -430,7 +430,8 @@ function Add-GforcesBrandItemsXml {
                     $_.id -notlike 'nissan_leaf' -and
                     $_.id -notlike 'nissan_note' -and
                     $_.id -notlike 'nissan_qashqai' -and
-                    $_.id -notlike 'volvo_v70'
+                    $_.id -notlike 'volvo_v70' -and
+                    $_.hide -notlike 'y'
                     }){
                         $y_value = 2 + ($order * 50)
                         $newCarName= $car.name -replace ' - 20.*','' 
