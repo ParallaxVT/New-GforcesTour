@@ -357,9 +357,13 @@ function Add-GforcesGridBrands {
             Remove-Item $tempfile -Force
             # Now we need to create grid_more.html, which is the same as grid_brands.html but changing the the links to more_brands.html
             Get-Content $brandsfile |
+<<<<<<< master
             foreach { ($_).replace('brand.html','more_brands.html') } |
+=======
+            foreach { ($_).replace('brand.html','grid_more.html') } |
             foreach { ($_).replace('<div id="logo">','<div id="logo" style="width:375px;margin:0 auto;padding:27px 0 0;float:none;">') } |
             foreach { ($_).replace('logo.gif','logo-net-director.jpg') } |
+>>>>>>> local
             Out-File -Encoding utf8 $morebrandsfile
             Write-Verbose "   > $($country.id)\grid_more.html"
             #Write-Debug "     Add file $morebrandsfile"
