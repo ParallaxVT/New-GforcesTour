@@ -335,7 +335,7 @@ function Add-GforcesGridBrands {
                 $param1 = $param1 + 192
                 if ($param1 -eq 960) {
                     $param1 = 0
-                    $param2 = $param2 + 220
+                    $param2 = $param2 + 170
                 }
             }
             $template_content = Get-Content $dir\.src\html\brands_index_template.html
