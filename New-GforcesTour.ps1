@@ -38,6 +38,11 @@
         if (!(Test-Path $config)) { Throw "Where is config.xml?" }
         # Source config.xml
         [xml]$configXml = Get-Content $config
+       # Array containing all the cars to be ranamed
+        $ignoreTour = $configXml.tour.ignore.car
+        foreach ($ignoreCar in $ignoreTour) {
+            [Array]$ignoreArray += $ignoreCar
+        }
         Write-Verbose "-------------------- Checking --------------------"
         $countryNumber = 0
         $brandNumber = 0
@@ -51,16 +56,19 @@
                     $modelNumber = $modelNumber + 1
                     foreach ($car in $model.car) {
                         $carNumber = $carNumber + 1
-                        # Check that there is a panorama for each car in config.xml
-                        if(!(Test-Path .\.src\panos\$($car.id).jpg )) { Throw "Pano .src\panos\$($car.id).jpg NOT FOUND." }
-                        # Check that every car has tites and scene.xml
-                        if(!(Test-Path .\$($car.id)\files )) { Throw "Folder .\$($car.id)\files NOT FOUND. Did you create the tiles correctly?" }
-                        if(!(Test-Path .\$($car.id)\files\scenes )) { Throw "Folder .\$($car.id)\files\scenes NOT FOUND. Did you create the tiles correctly?" }
-                        if(!(Test-Path .\$($car.id)\files\scenes\tiles )) { Throw "Folder .\$($car.id)\files\scenes\tiles NOT FOUND. Did you create the tiles correctly?" }
-                        if(!(Test-Path .\$($car.id)\files\scenes\scene.xml )) { Throw "File .\$($car.id)\files\scenes\scene.xml NOT FOUND. Did you create the tiles correctly?" }
-                        # Check that the panorama names has 3 underscores
-                        $underscores = ((($car.id).ToString()).split("_")).count
-                        if($underscores -ne "4") { Throw "The file $($car.id) doesn't have 4 underscores, it has $underscores. Plaese raname it. "}
+                        # Skip checking ignored cars
+                        if ($ignoreArray.id -notcontains $car.id) {
+                            # Check that there is a panorama for each car in config.xml
+                            if(!(Test-Path .\.src\panos\$($car.id).jpg )) { Throw "Pano .src\panos\$($car.id).jpg NOT FOUND." }
+                            # Check that every car has tites and scene.xml
+                            if(!(Test-Path .\$($car.id)\files )) { Throw "Folder .\$($car.id)\files NOT FOUND. Did you create the tiles correctly?" }
+                            if(!(Test-Path .\$($car.id)\files\scenes )) { Throw "Folder .\$($car.id)\files\scenes NOT FOUND. Did you create the tiles correctly?" }
+                            if(!(Test-Path .\$($car.id)\files\scenes\tiles )) { Throw "Folder .\$($car.id)\files\scenes\tiles NOT FOUND. Did you create the tiles correctly?" }
+                            if(!(Test-Path .\$($car.id)\files\scenes\scene.xml )) { Throw "File .\$($car.id)\files\scenes\scene.xml NOT FOUND. Did you create the tiles correctly?" }
+                            # Check that the panorama names has 3 underscores
+                            $underscores = ((($car.id).ToString()).split("_")).count
+                            if($underscores -ne "4") { Throw "The file $($car.id) doesn't have 4 underscores, it has $underscores. Plaese raname it. "}
+                        }
                     }
                 }
             }
@@ -74,10 +82,13 @@
         foreach {
             $carID = $($_.BaseName)
             $carFolder = ".src/panos/$carID.jpg"
-            if(!(Test-Path $($carFolder))) {
-                # Cars in the rename section aren't obsolete
-                if ($renameToArray -notcontains $carID) {
-                    throw "The following folder is obsolete: $($_.FullName)"
+            # Skip checking ignored cars
+            if ($ignoreArray.id -notcontains $carID) {
+                if(!(Test-Path $($carFolder))) {
+                    # Cars in the 'rename' and 'ignore' sections aren't obsolete
+                    if ($renameToArray -notcontains $carID) {
+                        throw "The following folder is obsolete: $($_.FullName)"
+                    }
                 }
             }
         }
@@ -93,26 +104,28 @@
             foreach ( $brand in $country.brand) {
                 foreach ($model in $brand.model) {
                     foreach ($car in $model.car) {
-                        $tour = $($car.id) | where { $_ -match $TourName.BaseName }
+                        $tour = $($car.id) | where { $_ -match $TourName.BaseName } 
                         if ($tour -notlike "" ){
-                            Write-Verbose ">> $tour"
-                            # Extract information from the car file name
-                            $countrycode = ($tour -split "_")[0]
-                            $brand = ($tour -split "_")[1]
-                            if (!($BrandFolderOnly)) {
-                                # Add index.html and devel.html
-                                Add-GforcesHtmlFiles
-                                # Add 'car/files/content/coord.xml' and 'car/files/content/panolist.xml'
-                                Add-GforcesContent
-                                # Add 'car/files/devel.xml'
-                                Add-GforcesDevelXml
-                                # Add 'car/file/tour.xml'
-                                Add-GforcesTourXml
+                            if ($ignoreArray.id -notcontains $tour) {
+                                Write-Verbose ">> $tour"
+                                # Extract information from the car file name
+                                $countrycode = ($tour -split "_")[0]
+                                $brand = ($tour -split "_")[1]
+                                if (!($BrandFolderOnly)) {
+                                    # Add index.html and devel.html
+                                    Add-GforcesHtmlFiles
+                                    # Add 'car/files/content/coord.xml' and 'car/files/content/panolist.xml'
+                                    Add-GforcesContent
+                                    # Add 'car/files/devel.xml'
+                                    Add-GforcesDevelXml
+                                    # Add 'car/file/tour.xml'
+                                    Add-GforcesTourXml
+                                }
+                                # Add each car to an array
+                                [Array]$tourArray += $countrycode + "_" + $brand
+                                # The variable $tour doesn't contain the renamed cars
+                                [Array]$tourIDArray += $tour
                             }
-                            # Add each car to an array
-                            [Array]$tourArray += $countrycode + "_" + $brand
-                            # The variable $tour doesn't contain the renamed cars
-                            [Array]$tourIDArray += $tour
                         }
                     }
                 }
@@ -121,7 +134,7 @@
     }
     End {
     # Don't run the script ONLY for a renamed car. It's ok if is included with others, but it break things if it's alone
-    if ($tourArray -like "") {Throw "$($tourName.BaseName) is a renamed car. Please choose a different car."}
+    if ($tourArray -like "") {Throw "$($tourName.BaseName) is a 'renamed' or 'ignored' car. Make sure that the script generate files for at least 1 car."}
     # Remove duplicates from the array
     $tourArray = $tourArray | Split-String "," | sort -Unique 
     # Check that all the car folders contain any HTML file.
