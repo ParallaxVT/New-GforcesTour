@@ -68,7 +68,7 @@
         # Check there are no folders which don't belong to an existing panorama
         $tour = $configXml.tour.rename.car.renameTo
         foreach ($car in $tour) {
-        [Array]$renameToArray += $car
+            [Array]$renameToArray += $car
         }
         Get-ChildItem . -Exclude .src, .no_scenes, brands, shared -Directory |
         foreach {
