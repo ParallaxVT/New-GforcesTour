@@ -73,8 +73,12 @@
                 $brandNumber = $brandNumber + 1
                 foreach ($model in $brand.model) {
                     $modelNumber = $modelNumber + 1
+                    # Check at least one car has a hide="y" attribute
+                    $carCount = 0
+                    $hideCount = 1
                     foreach ($car in $model.car) {
                         $carNumber = $carNumber + 1
+                        $carCount = $carCount + 1
                         # Skip checking ignored cars
                         if ($ignoreArray -notcontains $car.id) {
                             # Check that there is a panorama for each car in config.xml
@@ -87,6 +91,17 @@
                             # Check that the panorama names has 3 underscores
                             $underscores = ((($car.id).ToString()).split("_")).count
                             if($underscores -ne "4") { Throw "The file $($car.id) doesn't have 4 underscores, it has $underscores. Plaese raname it. "}
+                        }
+                        # Check at least one car has a hide="y" attribute
+                        if ($($car.hide) -like "y") {
+                            $hideCount = $hideCount + 1
+                        }
+                    }
+                    # Check at least one car has a hide="y" attribute
+                    if($carCount -gt 1) {
+                        if ($carCount -notlike $hideCount) {
+                            $carError = $country.id + '_' + $brand.id + '_' + $model.id
+                            Write-Warning "Check $carError hyde attribute"
                         }
                     }
                 }
