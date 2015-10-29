@@ -41,7 +41,26 @@
        # Array containing all the cars to be ranamed
         $ignoreTour = $configXml.tour.ignore.car
         foreach ($ignoreCar in $ignoreTour) {
-            [Array]$ignoreArray += $ignoreCar
+            [Array]$ignoreArray += $ignoreCar.id
+        }
+        # Add the cars that will be duplicated
+        foreach ( $country in $configXml.tour.duplicate.country ) {
+            foreach ( $brand in $country.brand ) {
+                foreach ( $country_duplicate in $configXml.tour.country | where {$_.id -like $country.id}) {
+                    foreach ( $brand_duplicate in $country_duplicate.brand | where {$_.id -like $brand.id}) {
+                        $dest = $brand.dest
+                        foreach ($model in $brand_duplicate.model) {
+                            foreach ($car in $model.car) {
+                                $brand = ($car.id -split "_")[1]
+                                $model = ($car.id -split "_")[2]
+                                $deriv = ($car.id -split "_")[3]
+                                $car_duplicate = $dest + '_' + $brand + '_' + $model + '_' + $deriv
+                                [Array]$ignoreArray += $car_duplicate
+                            }
+                        }
+                    }
+                }
+            }
         }
         Write-Verbose "-------------------- Checking --------------------"
         $countryNumber = 0
@@ -57,7 +76,7 @@
                     foreach ($car in $model.car) {
                         $carNumber = $carNumber + 1
                         # Skip checking ignored cars
-                        if ($ignoreArray.id -notcontains $car.id) {
+                        if ($ignoreArray -notcontains $car.id) {
                             # Check that there is a panorama for each car in config.xml
                             if(!(Test-Path .\.src\panos\$($car.id).jpg )) { Throw "Pano .src\panos\$($car.id).jpg NOT FOUND." }
                             # Check that every car has tites and scene.xml
@@ -83,7 +102,7 @@
             $carID = $($_.BaseName)
             $carFolder = ".src/panos/$carID.jpg"
             # Skip checking ignored cars
-            if ($ignoreArray.id -notcontains $carID) {
+            if ($ignoreArray -notcontains $carID) {
                 if(!(Test-Path $($carFolder))) {
                     # Cars in the 'rename' and 'ignore' sections aren't obsolete
                     if ($renameToArray -notcontains $carID) {
@@ -105,13 +124,13 @@
                 foreach ($model in $brand.model) {
                     foreach ($car in $model.car) {
                         $tour = $($car.id) | where { $_ -match $TourName.BaseName } 
-                        if ($tour -notlike "" ){
-                            if ($ignoreArray.id -notcontains $tour) {
-                                Write-Verbose ">> $tour"
-                                # Extract information from the car file name
-                                $countrycode = ($tour -split "_")[0]
-                                $brand = ($tour -split "_")[1]
+                        if ($tour -notlike "" ) {
+                            # Extract information from the car file name
+                            $countrycode = ($tour -split "_")[0]
+                            $brand = ($tour -split "_")[1]
+                            if ($ignoreArray -notcontains $tour) {
                                 if (!($BrandFolderOnly)) {
+                                    Write-Verbose ">> $tour"
                                     # Add index.html and devel.html
                                     Add-GforcesHtmlFiles
                                     # Add 'car/files/content/coord.xml' and 'car/files/content/panolist.xml'
@@ -121,11 +140,11 @@
                                     # Add 'car/file/tour.xml'
                                     Add-GforcesTourXml
                                 }
-                                # Add each car to an array
-                                [Array]$tourArray += $countrycode + "_" + $brand
-                                # The variable $tour doesn't contain the renamed cars
-                                [Array]$tourIDArray += $tour
                             }
+                            # Add each car to an array
+                            [Array]$tourArray += $countrycode + "_" + $brand
+                            # The variable $tour doesn't contain the renamed cars
+                            [Array]$tourIDArray += $tour
                         }
                     }
                 }
@@ -133,6 +152,8 @@
         }
     }
     End {
+    # Duplicate cars by changing the country code
+    Duplicate-GforcesCars
     # Don't run the script ONLY for a renamed car. It's ok if is included with others, but it break things if it's alone
     if ($tourArray -like "") {Throw "$($tourName.BaseName) is a 'renamed' or 'ignored' car. Make sure that the script generate files for at least 1 car."}
     # Remove duplicates from the array

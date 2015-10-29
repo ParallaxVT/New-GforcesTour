@@ -127,9 +127,10 @@ function Add-GforcesCountryIndex {
     foreach ($item in $tourArray) {
         $countryId = ($item -split "_")[0]
         $brandId = ($item -split "_")[1]
-        [Array]$countryArray += $countryId
-        $countrArray = $countrArray | sort -Unique
-        foreach ($country in $tour | where { $_.id -like $countryArray } ) {
+        #[Array]$countryArray += $countryId
+        #$countrArray = $countrArray | sort -Unique
+        #foreach ($country in $tour | where { $_.id -like $countryArray } ) {
+        foreach ($country in $tour | where { $_.id -like $countryId } ) {
             $countryFolder = "$dir\brands\$($country.id)"
             if (!(Test-Path "$countryFolder")) {
                 New-Item "$countryFolder" -Type Directory | Out-Null
@@ -160,6 +161,7 @@ function Add-GforcesCountryIndex {
             foreach {($_).replace('All Brands','Grid View')} |
             foreach {($_).replace('./brands/index.html','./grid_more.html')} |
             Set-Content "$countryFolder\index.html"
+            Write-Verbose "   > $($country.id)/index.html file"
             # devel.html
             Get-Content "$dir\.src\html\index_template.html" |
             foreach {
@@ -187,7 +189,7 @@ function Add-GforcesCountryIndex {
             foreach {($_).replace('./brands/index.html','./grid_more.html')} |
             foreach {($_).replace('</style>','.home-content{background:palegoldenrod;}</style>')} |
             Set-Content "$countryFolder\devel.html"
-            Write-Verbose "   > $($country.id)/devel.html file"
+            #Write-Verbose "   > $($country.id)/devel.html file"
         }
     }
 }
@@ -498,41 +500,43 @@ function Add-GforcesBrandDevelXml {
 
 function Add-GforcesBrandXml {
     $tour = $configXml.tour.country
-    foreach ($item in $tourArray) {
-        $countryId = ($item -split "_")[0]
-        $brandId = ($item -split "_")[1]
-        foreach ($country in $tour | where { $_.id -like $countryId } ) {
-            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
-                $tourFile = "$dir\brands\$($country.id)\$($brand.id)\brand.xml"
-                # Variable country code is used by the function Add-ToTourXml
-                $countrycode = $countryId
-                New-Item -ItemType File $tourFile -Force | Out-Null
-                Add-Content $tourFile '<?xml version="1.0" encoding="UTF-8"?>'
-                Add-Content $tourFile ('<krpano version="' + $krver + '">')
-                Add-Content $tourFile '<krpano logkey="true" />'
-                # Add 'items.xml' file inside 'brands' directory
-                $contentFolder = Get-Item "$dir\brands\$($country.id)\$($brand.id)\content\items.xml"
-                Add-ToTourXml $contentFolder
-                # Add 'content/index.xml' file inside each car belonging to the same brand
-                foreach ($model in $brand.model) {
-                    foreach ($car in $model.car) {
-                        #Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
-                        $contentFolder = Get-Item "$dir\$($car.id)\files\content\index.xml"
-                        Add-ToTourXml $contentFolder
+    if ($ignoreArray -notcontains $tourArray) {
+        foreach ($item in $tourArray) {
+            $countryId = ($item -split "_")[0]
+            $brandId = ($item -split "_")[1]
+            foreach ($country in $tour | where { $_.id -like $countryId } ) {
+                foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
+                    $tourFile = "$dir\brands\$($country.id)\$($brand.id)\brand.xml"
+                    # Variable country code is used by the function Add-ToTourXml
+                    $countrycode = $countryId
+                    New-Item -ItemType File $tourFile -Force | Out-Null
+                    Add-Content $tourFile '<?xml version="1.0" encoding="UTF-8"?>'
+                    Add-Content $tourFile ('<krpano version="' + $krver + '">')
+                    Add-Content $tourFile '<krpano logkey="true" />'
+                    # Add 'items.xml' file inside 'brands' directory
+                    $contentFolder = Get-Item "$dir\brands\$($country.id)\$($brand.id)\content\items.xml"
+                    Add-ToTourXml $contentFolder
+                    # Add 'content/index.xml' file inside each car belonging to the same brand
+                    foreach ($model in $brand.model) {
+                        foreach ($car in $model.car) {
+                            #Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
+                            $contentFolder = Get-Item "$dir\$($car.id)\files\content\index.xml"
+                            Add-ToTourXml $contentFolder
+                        }
                     }
-                }
-                # Add XML files inside 'include' folder
-                $includeFolder = Get-ChildItem "$dir\shared\include_brand\*\*.xml" -Exclude coordfinder, editor_and_options
-                Add-ToTourXml $includeFolder
-                # Add 'scene.xml' file inside each car belonging to the same brand
-                foreach ($model in $brand.model) {
-                    foreach ($car in $model.car) {
-                        $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
-                        Add-ToTourXml $scenesFolder
+                    # Add XML files inside 'include' folder
+                    $includeFolder = Get-ChildItem "$dir\shared\include_brand\*\*.xml" -Exclude coordfinder, editor_and_options
+                    Add-ToTourXml $includeFolder
+                    # Add 'scene.xml' file inside each car belonging to the same brand
+                    foreach ($model in $brand.model) {
+                        foreach ($car in $model.car) {
+                            $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
+                            Add-ToTourXml $scenesFolder
+                        }
                     }
+                    Add-Content $tourFile '</krpano>'
+                    Write-Verbose "   > $($country.id)\$($brand.id)\brand.html"
                 }
-                Add-Content $tourFile '</krpano>'
-                Write-Verbose "   > $($country.id)\$($brand.id)\brand.html"
             }
         }
     }
@@ -584,4 +588,64 @@ function Rename-CarsWithWrongName {
     #  'files' folder
     #  tour.xml
     # If any of this is missing print a warning to run the script for an specific car
+}
+
+function Duplicate-GforcesCars {
+    $duplicateItems = $configXml.tour.duplicate.country
+    $tour = $configXml.tour.country
+    if ($ignoreArray -notcontains $tourArray) {
+        [Array]$duplicateArray = $null
+        foreach ($item in $tourIDArray) {
+            $countryId = ($item -split "_")[0]
+            $brandId = ($item -split "_")[1]
+            foreach ($country_duplicate in $duplicateItems | where { $_.id -like $countryId } ) {
+                foreach ($brand_duplicate in $country_duplicate.brand | where { $_.id -like $brandId } ) {
+                    $dest = $brand_duplicate.dest
+                    $countrycode = ($item -split "_")[0]
+                    $brand = ($item -split "_")[1]
+                    $model = ($item -split "_")[2]
+                    $deriv = ($item -split "_")[3]
+                    $car_origin = $countrycode + '_' + $brand + '_' + $model + '_' + $deriv
+                    $car_duplicate = $dest + '_' + $brand + '_' + $model + '_' + $deriv
+                    if (!(Test-Path "$dir\$car_duplicate")) {
+                        New-Item "$dir\$car_duplicate" -Type Directory | Out-Null
+                    }
+                    if ( Test-Path $dir\$car_duplicate\index.html ) {
+                        Remove-Item $dir\$car_duplicate\index.html -Force
+                    }
+                    $template_content = Get-Content $dir\.src\html\scene_template.html
+                    $template_content |
+                    foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
+                    foreach { ($_).replace('SCENENAME',$car.id) } |
+                    Out-File -Encoding utf8 $dir\$car_duplicate\index.html
+                    # Add content\index.xml
+                    if (!(Test-Path "$dir\$car_duplicate\files")) {
+                        New-Item "$dir\$car_duplicate\files" -Type Director | Out-Null
+                    }
+                    if (!(Test-Path "$dir\$car_duplicate\files\content")) {
+                        New-Item "$dir\$car_duplicate\files\content" -Type Directory | Out-Null 
+                    }
+                    $origin_content = Get-Content $dir\$car_origin\files\content\index.xml
+                    $origin_content |
+                    foreach { ($_).replace($countrycode + '_',$dest + '_') } |
+                    Out-File -Encoding utf8  $dir\$car_duplicate\files\content\index.xml -Force
+                    # Add scenes\scene.xml
+                    if (!(Test-Path "$dir\$car_duplicate\files\scenes")) {
+                        New-Item "$dir\$car_duplicate\files\scenes" -Type Directory | Out-Null 
+                    }
+                    $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene.xml
+                    $origin_scene |
+                    foreach { ($_).replace('name="' + $countrycode + '_', 'name="' + $dest + '_') } |
+                    Out-File -Encoding utf8  $dir\$car_duplicate\files\scenes\scene.xml -Force
+                    # Create an Array to print the items afterwards
+                    $duplicateInfo = ">> $car_origin > $car_duplicate"
+                    [Array]$duplicateArray += $duplicateInfo
+                }
+            }
+        }
+        Write-Verbose "-------------------- Rename Cars --------------------"
+        foreach ($duplicatedCar in $duplicateArray) {
+            Write-Verbose $duplicatedCar
+        }
+    }
 }
