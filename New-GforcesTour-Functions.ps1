@@ -616,7 +616,7 @@ function Duplicate-GforcesCars {
                     $template_content = Get-Content $dir\.src\html\scene_template.html
                     $template_content |
                     foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
-                    foreach { ($_).replace('SCENENAME',$car.id) } |
+                    foreach { ($_).replace('SCENENAME',$item) } |
                     Out-File -Encoding utf8 $dir\$car_duplicate\index.html
                     # Add content\index.xml
                     if (!(Test-Path "$dir\$car_duplicate\files")) {
@@ -643,7 +643,7 @@ function Duplicate-GforcesCars {
                 }
             }
         }
-        Write-Verbose "-------------------- Rename Cars --------------------"
+        Write-Verbose "--------------------Cars For Other Countries --------------------"
         foreach ($duplicatedCar in $duplicateArray) {
             Write-Verbose $duplicatedCar
         }
