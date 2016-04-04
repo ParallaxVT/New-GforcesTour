@@ -645,7 +645,7 @@ function Duplicate-GforcesCars {
         }
         Write-Verbose "--------------------Cars For Other Countries --------------------"
         foreach ($duplicatedCar in $duplicateArray) {
-            Write-Verbose $duplicatedCar
+            Write-Warning $duplicatedCar
         }
     }
 }
