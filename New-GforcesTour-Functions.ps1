@@ -28,7 +28,12 @@ function Add-GforcesContent {
     $contentFile = "$dir\$tour\files\content\index.xml"
     New-Item -ItemType File $contentFile -Force | Out-Null
     Set-Content -Force $contentFile '<krpano>'
-    Add-Content $contentFile ('    <action name="movecamera_' + $car.id + '">movecamera(' +  $car.h +  ',' + $car.v + ');</action>')
+    Add-Content $contentFile ('    <action name="movecamera_' + $car.id + '">movecamera(' +  $car.h +  ',' + $car.v + ');')
+    if ($car.seat1) { Add-Content $contentFile ("        add_seat_btn(1,$($car.seat1);") }
+    if ($car.seat2) { Add-Content $contentFile ("        add_seat_btn(2,$($car.seat2);") }
+    if ($car.bg1) { Add-Content $contentFile ("        add_bg_btn(1,$($car.bg1);") }
+    if ($car.bg2) { Add-Content $contentFile ("        add_bg_btn(2,$($car.bg2);") }
+    Add-Content $contentFile ('    </action>')
     Add-Content $contentFile ('    <layer name="panolist" keep="true"><pano name="' + $car.id + '" scene="' + $car.name + '" title="' + $car.name + '" /></layer>')
     Add-Content $contentFile '</krpano>'
 }
@@ -41,6 +46,8 @@ function Add-GforcesDevelXml {
     Add-Content $develFile ('<krpano version="' + $krVersion + '">')
     Add-Content $develFile '    <krpano logkey="true" />'
     Add-Content $develFile '    <develmode enabled="true" />'
+    Add-Content $develFile '    <!-- Plugins -->'
+    Add-Content $develFile ('    <include url="%SWFPATH%/plugins/showtext.xml" />')
     Add-Content $develFile '    <!-- Content -->'
     $contentfolder = Get-ChildItem "$dir\$tour\files\content\*.xml"  |
     foreach { Add-Content $develFile ('    <include url="%CURRENTXML%/content/' + $_.BaseName + '.xml" />') }
@@ -83,13 +90,31 @@ function Add-GforcesTourXml {
     Add-Content $tourFile '<?xml version="1.0" encoding="UTF-8"?>'
     Add-Content $tourFile ('<krpano version="' + $krVersion + '">')
     Add-Content $tourFile '<krpano logkey="true" />'
+    Add-Content $tourFile '<include url="%SWFPATH%/plugins/showtext.xml" />'
     # Add XML files inside 'content' folder
     $contentFolder = Get-ChildItem "$dir\$tour\files\content\*.xml"
     Add-ToTourXml $contentFolder
     # Add XML files inside 'include' folder
-    $includeFolder = Get-ChildItem "$dir\shared\include\*\*.xml" -Exclude coordfinder, editor_and_options
+    if (Test-Path "$dir\$tour\files\scenes\scene.xml") {
+        # For normal interiors
+        $includeFolder = Get-ChildItem "$dir\shared\include\*\*.xml" -Exclude coordfinder, editor_and_options, visualiser
+        # For the visualiser
+    }
+    else
+    {
+        $includeFolder = Get-ChildItem "$dir\shared\include\*\*.xml" -Exclude coordfinder, editor_and_options
+    }
     Add-ToTourXml $includeFolder
     # Add XML files inside 'scenes' folder
+    # If it's a Visualiser interior fix scene name in the firs scene
+    if (Test-Path "$dir\$tour\files\scenes\scene_1_a.xml") {
+        $newScenename = '<scene name="' + $car.id + '">'
+        $sceneContent = Get-Content "$dir\$tour\files\scenes\scene_1_a.xml"
+        $sceneContent |
+        foreach { ($_).replace('<scene name="scene_1_a">',$newScenename) } |
+        Out-File -Encoding utf8 "$dir\$tour\files\scenes\scene_1_a.xml"
+    }
+    # Now add the XML files
     $scenesFolder = Get-ChildItem "$dir\$tour\files\scenes\*.xml"
     Add-ToTourXml $scenesFolder
     Add-Content $tourFile '</krpano>'
@@ -350,7 +375,7 @@ function Add-GforcesGridBrands {
                 } else {
                     $_
                 }
-            } | 
+            } |
             foreach { ($_).replace('<div id="logo">','<div id="logo" style="width:375px;margin:0 auto;padding:27px 0 0;float:none;">') } |
             foreach { ($_).replace('logo.gif','logo-net-director.jpg') } |
             Set-Content $brandsfile
@@ -441,7 +466,7 @@ function Add-GforcesBrandItemsXml {
                     $_.hide -notlike 'y'
                     }){
                         $y_value = 2 + ($order * 50)
-                        $newCarName= $car.name -replace ' - 20.*','' 
+                        $newCarName= $car.name -replace ' - 20.*',''
                         Add-Content $itemsFile ('<layer name    ="container_1_item_' + $car.id + '"')
                         Add-Content $itemsFile ('       html    ="[h1]' + $newCarName + '[/h1]"')
                         Add-Content $itemsFile ('       onclick ="activatepano(' + ($car.id) + ',scenevariation);"')
@@ -530,7 +555,13 @@ function Add-GforcesBrandXml {
                     # Add 'scene.xml' file inside each car belonging to the same brand
                     foreach ($model in $brand.model) {
                         foreach ($car in $model.car) {
-                            $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
+                            if(Test-Path $dir\$($car.id)\files\scenes\scene.xml) {
+                                $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
+                            }
+                            else
+                            {
+                                $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene_*.xml"
+                            }
                             Add-ToTourXml $scenesFolder
                         }
                     }
@@ -562,7 +593,7 @@ function Rename-CarsWithWrongName {
             $carRenameTo = $($renameCar.renameTo)
             #Write-Host $carID
             #Write-Host $carRenameTo
-            # Delete folder with the wrong name     
+            # Delete folder with the wrong name
             if ( Test-Path $dir\$carRenameTo ) {
                 Remove-Item $dir\$carRenameTo -Recurse -Force
             }
@@ -583,7 +614,7 @@ function Rename-CarsWithWrongName {
         }
     }
     # Check if the following things exist:
-    #  Folder with the wrong car name 
+    #  Folder with the wrong car name
     #  index.html
     #  'files' folder
     #  tour.xml
@@ -623,7 +654,7 @@ function Duplicate-GforcesCars {
                         New-Item "$dir\$car_duplicate\files" -Type Director | Out-Null
                     }
                     if (!(Test-Path "$dir\$car_duplicate\files\content")) {
-                        New-Item "$dir\$car_duplicate\files\content" -Type Directory | Out-Null 
+                        New-Item "$dir\$car_duplicate\files\content" -Type Directory | Out-Null
                     }
                     $origin_content = Get-Content $dir\$car_origin\files\content\index.xml
                     $origin_content |
@@ -631,9 +662,15 @@ function Duplicate-GforcesCars {
                     Out-File -Encoding utf8  $dir\$car_duplicate\files\content\index.xml -Force
                     # Add scenes\scene.xml
                     if (!(Test-Path "$dir\$car_duplicate\files\scenes")) {
-                        New-Item "$dir\$car_duplicate\files\scenes" -Type Directory | Out-Null 
+                        New-Item "$dir\$car_duplicate\files\scenes" -Type Directory | Out-Null
                     }
-                    $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene.xml
+                    if(Test-Path $dir\$car_origin\files\scenes\scene.xml) {
+                        $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene.xml
+                    }
+                    else
+                    {
+                        $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene_*.xml
+                    }
                     $origin_scene |
                     foreach { ($_).replace('name="' + $countrycode + '_', 'name="' + $dest + '_') } |
                     Out-File -Encoding utf8  $dir\$car_duplicate\files\scenes\scene.xml -Force

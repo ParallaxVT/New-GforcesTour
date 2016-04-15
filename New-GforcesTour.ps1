@@ -82,12 +82,13 @@
                         # Skip checking ignored cars
                         if ($ignoreArray -notcontains $car.id) {
                             # Check that there is a panorama for each car in config.xml
-                            if(!(Test-Path .\.src\panos\$($car.id).jpg )) { Throw "Pano .src\panos\$($car.id).jpg NOT FOUND." }
+                            if(!(Test-Path .\.src\panos\$($car.id).jpg ) -and !(Test-Path .\.src\panos\$($car.id))) { Throw "Pano .src\panos\$($car.id).jpg NOT FOUND." }
+                            if((Test-Path .\.src\panos\$($car.id)) -and !(Get-ChildItem .\.src\panos\$($car.id)\*.jpg)) { Throw "Panos inside directory .src\panos\$($car.id) NOT FOUND." }
                             # Check that every car has tites and scene.xml
                             if(!(Test-Path .\$($car.id)\files )) { Throw "Folder .\$($car.id)\files NOT FOUND. Did you create the tiles correctly?" }
                             if(!(Test-Path .\$($car.id)\files\scenes )) { Throw "Folder .\$($car.id)\files\scenes NOT FOUND. Did you create the tiles correctly?" }
-                            if(!(Test-Path .\$($car.id)\files\scenes\tiles )) { Throw "Folder .\$($car.id)\files\scenes\tiles NOT FOUND. Did you create the tiles correctly?" }
-                            if(!(Test-Path .\$($car.id)\files\scenes\scene.xml )) { Throw "File .\$($car.id)\files\scenes\scene.xml NOT FOUND. Did you create the tiles correctly?" }
+                            if(!(Test-Path .\$($car.id)\files\scenes\tiles ) -and (!(Get-ChildItem .\$($car.id)\files\scenes\scene_*))) { Throw "Tiles in .\$($car.id)\files\scenes\ NOT FOUND. Did you create the tiles correctly?" }
+                            if(!(Test-Path .\$($car.id)\files\scenes\scene.xml  ) -and (!(Get-ChildItem .\$($car.id)\files\scenes\scene_*.xml))) { Throw "XML scene file/s in .\$($car.id)\files\scenes\ NOT FOUND. Did you create the tiles correctly?" }
                             # Check that the panorama names has 3 underscores
                             $underscores = ((($car.id).ToString()).split("_")).count
                             if($underscores -ne "4") { Throw "The file $($car.id) doesn't have 4 underscores, it has $underscores. Plaese raname it. "}
@@ -118,7 +119,7 @@
             $carFolder = ".src/panos/$carID.jpg"
             # Skip checking ignored cars
             if ($ignoreArray -notcontains $carID) {
-                if(!(Test-Path $($carFolder))) {
+                if(!(Test-Path $($carFolder)) -and !(Test-Path .\.src\panos\$($carID))) {
                     # Cars in the 'rename' and 'ignore' sections aren't obsolete
                     if ($renameToArray -notcontains $carID) {
                         throw "The following folder is obsolete: $($_.FullName)"
