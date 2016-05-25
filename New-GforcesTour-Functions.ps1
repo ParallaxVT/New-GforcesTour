@@ -29,10 +29,12 @@ function Add-GforcesContent {
     New-Item -ItemType File $contentFile -Force | Out-Null
     Set-Content -Force $contentFile '<krpano>'
     Add-Content $contentFile ('    <action name="movecamera_' + $car.id + '">movecamera(' +  $car.h +  ',' + $car.v + ');')
-    if ($car.seat1) { Add-Content $contentFile ("        add_seat_btn(1,$($car.seat1);") }
-    if ($car.seat2) { Add-Content $contentFile ("        add_seat_btn(2,$($car.seat2);") }
-    if ($car.bg1) { Add-Content $contentFile ("        add_bg_btn(1,$($car.bg1);") }
-    if ($car.bg2) { Add-Content $contentFile ("        add_bg_btn(2,$($car.bg2);") }
+    if ($car.seat1) { Add-Content $contentFile ("        add_seat_btn(1,$($car.seat1));") }
+    if ($car.seat2) { Add-Content $contentFile ("        add_seat_btn(2,$($car.seat2));") }
+    if ($car.bg1) { Add-Content $contentFile ("        add_bg_btn(1,$($car.bg1));") }
+    if ($car.bg2) { Add-Content $contentFile ("        add_bg_btn(2,$($car.bg2));") }
+    if ($car.bg3) { Add-Content $contentFile ("        add_bg_btn(3,$($car.bg3));") }
+    if (!($car.bg1)) { Add-Content $contentFile ("        removelayer(bg_btn);") }
     Add-Content $contentFile ('    </action>')
     Add-Content $contentFile ('    <layer name="panolist" keep="true"><pano name="' + $car.id + '" scene="' + $car.name + '" title="' + $car.name + '" /></layer>')
     Add-Content $contentFile '</krpano>'
