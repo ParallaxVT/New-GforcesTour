@@ -506,7 +506,9 @@ function Add-GforcesBrandDevelXml {
                 Add-Content $develFile ('    <include url="%CURRENTXML%/content/' + $(Get-Item $dir\brands\$($country.id)\$($brand.id)\content\items.xml).BaseName + '.xml" />')
                 foreach ($model in $brand.model) {
                     foreach ($car in $model.car) {
-                        Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
+                        if ($ignoreArray -notcontains $car.id) {
+                            Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
+                        }
                     }
                 }
                 Add-Content $develFile '    <!-- Include -->'
@@ -515,7 +517,9 @@ function Add-GforcesBrandDevelXml {
                 Add-Content $develFile '    <!-- Scenes -->'
                 foreach ($model in $brand.model) {
                     foreach ($car in $model.car) {
-                        Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/scenes/scene.xml" />')
+                        if ($ignoreArray -notcontains $car.id) {
+                            Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/scenes/scene.xml" />')
+                        }
                     }
                 }
                 Add-Content $develFile '</krpano>'
@@ -546,9 +550,11 @@ function Add-GforcesBrandXml {
                     # Add 'content/index.xml' file inside each car belonging to the same brand
                     foreach ($model in $brand.model) {
                         foreach ($car in $model.car) {
-                            #Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
-                            $contentFolder = Get-Item "$dir\$($car.id)\files\content\index.xml"
-                            Add-ToTourXml $contentFolder
+                            if ($ignoreArray -notcontains $car.id) {
+                                #Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
+                                $contentFolder = Get-Item "$dir\$($car.id)\files\content\index.xml"
+                                Add-ToTourXml $contentFolder
+                            }
                         }
                     }
                     # Add XML files inside 'include' folder
@@ -557,14 +563,16 @@ function Add-GforcesBrandXml {
                     # Add 'scene.xml' file inside each car belonging to the same brand
                     foreach ($model in $brand.model) {
                         foreach ($car in $model.car) {
-                            if(Test-Path $dir\$($car.id)\files\scenes\scene.xml) {
-                                $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
+                            if ($ignoreArray -notcontains $car.id) {
+                                if(Test-Path $dir\$($car.id)\files\scenes\scene.xml) {
+                                    $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
+                                }
+                                else
+                                {
+                                    $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene_*.xml"
+                                }
+                                Add-ToTourXml $scenesFolder
                             }
-                            else
-                            {
-                                $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene_*.xml"
-                            }
-                            Add-ToTourXml $scenesFolder
                         }
                     }
                     Add-Content $tourFile '</krpano>'
