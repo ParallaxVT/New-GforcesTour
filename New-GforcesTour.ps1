@@ -43,6 +43,12 @@
         foreach ($ignoreCar in $ignoreTour) {
             [Array]$ignoreArray += $ignoreCar.id
         }
+        # Array containing just the cars in <ignore>
+        [Array]$ignoredCarsArray = ""
+        $ignoredCars = $configXml.tour.ignore.car
+        foreach ($ignoredCar in $ignoredCars) {
+            [Array]$ignoredCarsArray += $ignoredCar.id
+        }
         # Add the cars that will be duplicated
         foreach ( $country in $configXml.tour.duplicate.country ) {
             foreach ( $brand in $country.brand ) {

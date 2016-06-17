@@ -465,7 +465,10 @@ function Add-GforcesBrandItemsXml {
                     $_.id -notlike 'nissan_note' -and
                     $_.id -notlike 'nissan_qashqai' -and
                     $_.id -notlike 'volvo_v70' -and
-                    $_.hide -notlike 'y'
+                    $_.hide -notlike 'y' -and
+                    $(if ($countryId -like "ae" -and $brandId -like "lexus") {
+                        $ignoredCarsArray -notcontains $_.id
+                    })
                     }){
                         $y_value = 2 + ($order * 50)
                         $newCarName= $car.name -replace ' - 20.*',''
@@ -548,9 +551,14 @@ function Add-GforcesBrandXml {
                     $contentFolder = Get-Item "$dir\brands\$($country.id)\$($brand.id)\content\items.xml"
                     Add-ToTourXml $contentFolder
                     # Add 'content/index.xml' file inside each car belonging to the same brand
+                    if ($countryId -like "ae") {
+                    $exclude = $ignoredCarsArray
+                    } else {
+                    $exclude = $ignoreArray
+                    }
                     foreach ($model in $brand.model) {
                         foreach ($car in $model.car) {
-                            if ($ignoreArray -notcontains $car.id) {
+                            if ($exclude -notcontains $car.id) {
                                 #Add-Content $develFile ('    <include url="%SWFPATH%/../' + $(Get-Item $dir\$($car.id)).BaseName + '/files/content/index.xml" />')
                                 $contentFolder = Get-Item "$dir\$($car.id)\files\content\index.xml"
                                 Add-ToTourXml $contentFolder
@@ -563,7 +571,7 @@ function Add-GforcesBrandXml {
                     # Add 'scene.xml' file inside each car belonging to the same brand
                     foreach ($model in $brand.model) {
                         foreach ($car in $model.car) {
-                            if ($ignoreArray -notcontains $car.id) {
+                            if ($exclude -notcontains $car.id) {
                                 if(Test-Path $dir\$($car.id)\files\scenes\scene.xml) {
                                     $scenesFolder = Get-Item "$dir\$($car.id)\files\scenes\scene.xml"
                                 }
