@@ -628,6 +628,10 @@ function Rename-CarsWithWrongName {
             $index_content |
             foreach { ($_).replace($CarID + '"',$carRenameTo + '"' ) } |
             Out-File -Encoding utf8 $dir\$carRenameTo\files\tour.xml
+            # Copy btn_#.jpg images if there is any
+            if ( Get-ChildItem $dir\$carID\files\btn*.jpg ) {
+                Copy-Item $dir\$carID\files\btn_*.jpg $dir\$carRenameTo\files\
+            }
             Write-Verbose ">> $carID > $carRenameTo"
         }
     }
