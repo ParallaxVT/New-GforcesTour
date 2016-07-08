@@ -89,6 +89,7 @@
                         if ($ignoreArray -notcontains $car.id) {
                             # Check that there is a panorama for each car in config.xml
                             if(!(Test-Path .\.src\panos\$($car.id).jpg ) -and !(Test-Path .\.src\panos\$($car.id))) { Throw "Pano .src\panos\$($car.id).jpg NOT FOUND." }
+                            if(!(Test-Path .\.src\panos\$($car.id)) -and !(Test-Path .\.src\panos\$($car.id).jpg )) { Throw "Folder .src\panos\$($car.id) NOT FOUND." }
                             if((Test-Path .\.src\panos\$($car.id)) -and !(Get-ChildItem .\.src\panos\$($car.id)\*.jpg)) { Throw "Panos inside directory .src\panos\$($car.id) NOT FOUND." }
                             # Check that every car has tites and scene.xml
                             if(!(Test-Path .\$($car.id)\files )) { Throw "Folder .\$($car.id)\files NOT FOUND. Did you create the tiles correctly?" }
