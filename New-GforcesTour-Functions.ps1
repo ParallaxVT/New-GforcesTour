@@ -134,6 +134,7 @@ function Add-GfocesBrandsIndex {
             foreach ($country in $tour) {
                 '                <li><a href="./' + $country.id + '/index.html" title="' + $country.name + '">'+ $country.name + '</a></li>'
             }
+            '                <li><a href="./ie/index.html" title="Ireland">Ireland</a></li>' # Add Ireland manually
             '            </ul>'
         }
         else
@@ -188,7 +189,7 @@ function Add-GforcesCountryIndex {
             foreach {($_).replace('All Brands','Grid View')} |
             foreach {($_).replace('./brands/index.html','./grid_more.html')} |
             Set-Content "$countryFolder\index.html"
-            Write-Verbose "   > $($country.id)/index.html file"
+            Write-Verbose "   > $($country.id)\index.html file"
             # devel.html
             Get-Content "$dir\.src\html\index_template.html" |
             foreach {
@@ -217,6 +218,15 @@ function Add-GforcesCountryIndex {
             foreach {($_).replace('</style>','.home-content{background:palegoldenrod;}</style>')} |
             Set-Content "$countryFolder\devel.html"
             #Write-Verbose "   > $($country.id)/devel.html file"
+            if ($country.id -like 'gb' ) {
+                Get-Content "$dir\brands\gb\index.html" |
+                foreach {($_).replace('gb_','ie_')} |
+                Set-Content "$dir\brands\ie\index.html"
+                Get-Content "$dir\brands\gb\devel.html" |
+                foreach {($_).replace('gb_','ie_')} |
+                Set-Content "$dir\brands\ie\devel.html"
+                Write-Verbose "   > ie\index.html file"
+            }
         }
     }
 }
@@ -265,6 +275,12 @@ function Add-GforcesBrandIndex {
                     New-Item "$brandFolder" -Type Directory | Out-Null
                     Write-Debug "     Add folder $brandFolder"
                 }
+                if ($country.id -like 'gb' ) {
+                    if (!(Test-Path "$dir\brands\ie\$($brand.id)")) {
+                        New-Item "$dir\brands\ie\$($brand.id)" -Type Directory | Out-Null
+                        Write-Debug "     Add folder $dir\brands\ie\$($brand.id)"
+                    }
+                }
                 Get-Content "$dir\.src\html\index_template.html" |
                 foreach {
                     if ($_ -match 'ADDCONTENT' ) {
@@ -290,7 +306,7 @@ function Add-GforcesBrandIndex {
                 foreach {($_).replace('All Brands','Dark Interface')} |
                 foreach {($_).replace('./brands/index.html','./brand.html')} |
                 Set-Content "$brandFolder\index.html"
-                Write-Verbose "   > $($country.id)/$($brand.id)/index.html file"
+                Write-Verbose "   > $($country.id)\$($brand.id)\index.html file"
                 #Write-Debug "     Add file $dir\brands\$($country.id)\$($brand.id)\index.html"
             }
         }
@@ -321,6 +337,13 @@ function Add-GforcesModelIndex {
                                 New-Item $modelFolder -Type Directory | Out-Null
                                 Write-Debug "     Add folder $modelFolder"
                             }
+                            if ($country.id -like 'gb' ) {
+                                if ( !(Test-Path $dir\brands\ie\$($brand.id)\$($model.id)) ) {
+                                    New-Item $dir\brands\ie\$($brand.id)\$($model.id) -Type Directory | Out-Null
+                                    Write-Debug "     Add folder $dir\brands\ie\$($brand.id)\$($model.id)"
+                                }
+
+                            }
                             foreach ($car in $model.car) {
                                 '                <li><a href="../../../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
                             }
@@ -338,6 +361,12 @@ function Add-GforcesModelIndex {
                     Set-Content "$modelFolder\index.html"
                     Write-Verbose "   > $($country.id)\$($brand.id)\$($model.id)\index.html"
                     #Write-Debug "     Add file $modelFolder\index.html"
+                    if ($country.id -like 'gb' ) {
+                        Get-Content "$dir\brands\gb\$($brand.id)\$($model.id)\index.html" |
+                        foreach {($_).replace('gb_','ie_')} |
+                        Set-Content "$dir\brands\ie\$($brand.id)\$($model.id)\index.html"
+                        Write-Verbose "   > ie\$($brand.id)\$($model.id)\index.html"
+                    }
                 }
             }
         }
@@ -392,6 +421,16 @@ function Add-GforcesGridBrands {
             Out-File -Encoding utf8 $morebrandsfile
             Write-Verbose "   > $($country.id)\grid_more.html"
             #Write-Debug "     Add file $morebrandsfile"
+            if ($country.id -like 'gb' ) {
+                Get-Content "$dir\brands\gb\grid_brands.html" |
+                foreach {($_).replace('gb_','ie_')} |
+                Set-Content "$dir\brands\ie\grid_brands.html"
+                Write-Verbose "   > ie\grid_brands.html file"
+                Get-Content "$dir\brands\gb\grid_more.html" |
+                foreach {($_).replace('gb_','ie_')} |
+                Set-Content "$dir\brands\ie\grid_more.html"
+                Write-Verbose "   > ie\grid_more.html file"
+            }
         }
     }
 }
@@ -422,7 +461,7 @@ function Add-GforcesBrandHtml {
                 foreach { ($_).replace('BRANDNAME',$brandname) } |
                 foreach { ($_).replace('SCENENAME',($first_car + ',null,more')) } |
                 Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\more_brands.html
-                Write-Debug "   > $($country.id)\$brand_name\more_brand.html"
+                Write-Debug "   > $($country.id)\$brand_name\more_brands.html"
                 # Create devel\brand.html
                 $template_content |
                 foreach { ($_).replace('SERVERNAME','../../..') } |
@@ -433,12 +472,30 @@ function Add-GforcesBrandHtml {
                 Write-Debug "   > $($country.id)\$brand_name\devel_brand.html"
                 # Create devel\more_brands.html
                 $template_content |
-                foreach { ($_).replace('SERVERNAME','../..') } |
+                foreach { ($_).replace('SERVERNAME','../../..') } |
                 foreach { ($_).replace('BRANDNAME',$brand_name) } |
                 foreach { ($_).replace('SCENENAME',($first_car + ',null,more')) } |
+                foreach { ($_).replace('../../../brands',"../../../brands/$($country.id)") } |
                 foreach { ($_).replace('brand.xml','devel_brand.xml') } |
                 Out-File -Encoding utf8 $dir\brands\$($country.id)\$brand_name\devel_more_brands.html
-                Write-Debug "   > $($country.id)\$brand_name\devel_more_brand.html"
+                Write-Debug "   > $($country.id)\$brand_name\devel_more_brands.html"
+                if ($country.id -like 'gb' ) {
+                    Copy-Item "$dir\brands\gb\$brand_name\brand.html" "$dir\brands\ie\$brand_name\brand.html"
+                    Write-Verbose "   > ie\$brand_name\brand.html"
+
+                    Copy-Item "$dir\brands\gb\$brand_name\more_brands.html" "$dir\brands\ie\$brand_name\more_brands.html"
+                    Write-Debug "   > ie\$brand_name\more_brands.html"
+
+                    Get-Content "$dir\brands\gb\$brand_name\devel_brand.html" |
+                    foreach {($_).replace('/gb/','/ie/')} |
+                    Set-Content "$dir\brands\ie\$brand_name\devel_brand.html"
+                    Write-Debug "   > ie\$brand_name\devel_brand.html"
+
+                    Get-Content "$dir\brands\gb\$brand_name\devel_more_brands.html" |
+                    foreach {($_).replace('/gb/','/ie/')} |
+                    Set-Content "$dir\brands\ie\$brand_name\devel_more_brands.html"
+                    Write-Debug "   > ie\$brand_name\devel_more_brands.html"
+                }
             }
         }
     }
@@ -457,19 +514,7 @@ function Add-GforcesBrandItemsXml {
                 Add-Content $itemsFile ('<krpano>')
                 $order = 0
                 foreach ($model in $brand.model) {
-                    foreach ($car in $model.car | where {
-                    $_.id -notlike 'hyundai_i1' -and
-                    $_.id -notlike 'land_rover_range_rover_sport' -and
-                    $_.id -notlike 'nissan_370z_roadster_open' -and
-                    $_.id -notlike 'nissan_leaf' -and
-                    $_.id -notlike 'nissan_note' -and
-                    $_.id -notlike 'nissan_qashqai' -and
-                    $_.id -notlike 'volvo_v70' -and
-                    $_.hide -notlike 'y' -and
-                    $(if ($countryId -like "ae" -and $brandId -like "lexus") {
-                        $ignoredCarsArray -notcontains $_.id
-                    })
-                    }){
+                    foreach ($car in $model.car | where { $_.hide -notlike 'y' }) {
                         $y_value = 2 + ($order * 50)
                         $newCarName= $car.name -replace ' - 20.*',''
                         Add-Content $itemsFile ('<layer name    ="container_1_item_' + $car.id + '"')
@@ -487,6 +532,15 @@ function Add-GforcesBrandItemsXml {
                 Write-Verbose "   > $($country.id)\$($brand.id)\content\items.xml"
                 # Copy the corresponding logo
                 Copy-Item "$dir\shared\html_brands\img\logos\$($brand.id).jpg" "$dir\brands\$($country.id)\$($brand.id)\content\thumb.jpg"
+            }
+            if($country.id = 'gb') {
+                if (!(Test-Path "$dir\brands\gb\$($brand.id)\content")) {
+                    New-Item -Type directory "$dir\brands\gb\$($brand.id)\content" -Force | Out-Null
+                }
+                Get-Content "$dir\brands\gb\$($brand.id)\content\items.xml" |
+                foreach {($_).replace('gb_','ie_')} |
+                Set-Content "$dir\brands\ie\$($brand.id)\items.xml"
+                Write-Verbose "   > ie\$($brand.id)\content\items.xml"
             }
         }
     }
@@ -527,6 +581,12 @@ function Add-GforcesBrandDevelXml {
                 }
                 Add-Content $develFile '</krpano>'
                 Write-Verbose "   > $($country.id)\$($brand.id)\devel_brand.xml"
+                if ($country.id = 'gb') {
+                    Get-Content "$dir\brands\gb\$($brand.id)\devel_brand.xml" |
+                    foreach {($_).replace('gb_','ie_')} |
+                    Set-Content "$dir\brands\ie\$($brand.id)\devel_brand.xml"
+                    Write-Verbose "   > ie\$($brand.id)\devel_brand.xml"
+                }
             }
         }
     }
@@ -584,7 +644,7 @@ function Add-GforcesBrandXml {
                         }
                     }
                     Add-Content $tourFile '</krpano>'
-                    Write-Verbose "   > $($country.id)\$($brand.id)\brand.html"
+                    Write-Verbose "   > $($country.id)\$($brand.id)\brand.xml"
                 }
             }
         }
@@ -652,7 +712,7 @@ function Duplicate-GforcesCars {
             $countryId = ($item -split "_")[0]
             $brandId = ($item -split "_")[1]
             foreach ($country_duplicate in $duplicateItems | where { $_.id -like $countryId } ) {
-                foreach ($brand_duplicate in $country_duplicate.brand | where { $_.id -like $brandId } ) {
+                foreach ($brand_duplicate in $country_duplicate.brand | where { $_.id -like $brandId -or $_.id -like 'all' } ) {
                     $dest = $brand_duplicate.dest
                     $countrycode = ($item -split "_")[0]
                     $brand = ($item -split "_")[1]
@@ -680,7 +740,6 @@ function Duplicate-GforcesCars {
                     }
                     $origin_content = Get-Content $dir\$car_origin\files\content\index.xml
                     $origin_content |
-                    foreach { ($_).replace($countrycode + '_',$dest + '_') } |
                     Out-File -Encoding utf8  $dir\$car_duplicate\files\content\index.xml -Force
                     # Add scenes\scene.xml
                     if (!(Test-Path "$dir\$car_duplicate\files\scenes")) {
@@ -688,14 +747,20 @@ function Duplicate-GforcesCars {
                     }
                     if(Test-Path $dir\$car_origin\files\scenes\scene.xml) {
                         $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene.xml
+                        $origin_scene |
+                        foreach { ($_).replace('name="' + $countrycode + '_', 'name="' + $dest + '_') } |
+                        Out-File -Encoding utf8  $dir\$car_duplicate\files\scenes\scene.xml -Force
                     }
                     else
                     {
                         $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene_*.xml
+                        $out_file = "$dir\$car_duplicate\files\scenes\scene.xml"
+                        New-Item -ItemType File $out_file -Force | Out-Null
+                        Add-Content $out_file ('<krpano>')
+                        $origin_scene |
+                        add-content $out_file
+                        Add-Content $out_file ('</krpano>')
                     }
-                    $origin_scene |
-                    foreach { ($_).replace('name="' + $countrycode + '_', 'name="' + $dest + '_') } |
-                    Out-File -Encoding utf8  $dir\$car_duplicate\files\scenes\scene.xml -Force
                     # Create an Array to print the items afterwards
                     $duplicateInfo = ">> $car_origin > $car_duplicate"
                     [Array]$duplicateArray += $duplicateInfo

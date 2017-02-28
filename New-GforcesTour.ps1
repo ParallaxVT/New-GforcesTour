@@ -49,6 +49,20 @@
         foreach ($ignoredCar in $ignoredCars) {
             [Array]$ignoredCarsArray += $ignoredCar.id
         }
+        # Ignore any 'ie_' car, as they will be duplicated
+        foreach ( $gbCountry in $configXml.tour.country | where {$_.id -like 'gb'}) {
+            foreach ( $gbBrand in $gbCountry.brand ) {
+                foreach ( $gbModel in $gbBrand.model ) {
+                    foreach ($gbCar in $gbModel.car) {
+                        $brand = ($gbCar.id -split "_")[1]
+                        $model = ($gbCar.id -split "_")[2]
+                        $deriv = ($gbCar.id -split "_")[3]
+                        $car_duplicate = 'ie_' + $brand + '_' + $model + '_' + $deriv
+                        [Array]$ignoreArray += $car_duplicate
+                    }
+                }
+            }
+        }
         # Add the cars that will be duplicated
         foreach ( $country in $configXml.tour.duplicate.country ) {
             foreach ( $brand in $country.brand ) {
@@ -146,7 +160,7 @@
             foreach ( $brand in $country.brand) {
                 foreach ($model in $brand.model) {
                     foreach ($car in $model.car) {
-                        $tour = $($car.id) | where { $_ -match $TourName.BaseName } 
+                        $tour = $($car.id) | where { $_ -match $TourName.BaseName }
                         if ($tour -notlike "" ) {
                             # Extract information from the car file name
                             $countrycode = ($tour -split "_")[0]
@@ -180,7 +194,7 @@
     # Don't run the script ONLY for a renamed car. It's ok if is included with others, but it break things if it's alone
     if ($tourArray -like "") {Throw "$($tourName.BaseName) is a 'renamed' or 'ignored' car. Make sure that the script generate files for at least 1 car."}
     # Remove duplicates from the array
-    $tourArray = $tourArray | Split-String "," | sort -Unique 
+    $tourArray = $tourArray | Split-String "," | sort -Unique
     # Check that all the car folders contain any HTML file.
     # If there isn't one, that would mean that I generated the tiles for a car, but I didn't add the details to config.xml
     # and run the script to generate the tour files
