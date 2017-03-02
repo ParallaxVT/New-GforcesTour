@@ -169,7 +169,7 @@ function Add-GforcesCountryIndex {
                 if ($_ -match 'ADDCONTENT' ) {
                     '            <h5><a href="../index.html">(Up One Level)</a></h5>'
                     foreach ($brand in $country.brand) {
-                        '            <h4><a href="./' + $($brand.id) + '/index.html">' + $brand.name + '</a></h4>'
+                        '            <h4><a name="' + $brand.id + '" href="./' + $($brand.id) + '/index.html">' + $brand.name + '</a></h4>'
                         '            <ul>'
                         foreach ($model in $brand.model) {
                             foreach ($car in $model.car) {
