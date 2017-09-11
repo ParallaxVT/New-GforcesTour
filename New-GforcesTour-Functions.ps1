@@ -88,6 +88,7 @@ function Add-ToTourXml ($selectedFolder) {
 function Add-GforcesTourXml {
     Write-Debug "   > tour.xml"
     $tourFile = "$dir\$tour\files\tour.xml"
+    $enFile = "$dir\$tour\files\en.xml"
     New-Item -ItemType File $tourFile -Force | Out-Null
     Add-Content $tourFile '<?xml version="1.0" encoding="UTF-8"?>'
     Add-Content $tourFile ('<krpano version="' + $krVersion + '">')
@@ -120,6 +121,8 @@ function Add-GforcesTourXml {
     $scenesFolder = Get-ChildItem "$dir\$tour\files\scenes\*.xml"
     Add-ToTourXml $scenesFolder
     Add-Content $tourFile '</krpano>'
+    # Duplicate tour.xml as en.xml
+    Copy-Item -Path $tourFile -Destination $enFile -Force
 }
 
 function Add-GfocesBrandsIndex {
@@ -829,6 +832,10 @@ function Duplicate-GforcesCars {
                         $origin_scene |
                         add-content $out_file
                         Add-Content $out_file ('</krpano>')
+                    }
+                    # Add files/en.xml
+                    if(Test-Path $dir\$car_origin\files\tour.xml) {
+                        Copy-Item -Path $dir\$car_origin\files\tour.xml -Destination $dir\$car_duplicate\files\en.xml -Force -Verbose
                     }
                     # Create an Array to print the items afterwards
                     $duplicateInfo = ">> $car_origin > $car_duplicate"
