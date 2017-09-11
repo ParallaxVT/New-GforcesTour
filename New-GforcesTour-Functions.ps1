@@ -835,7 +835,11 @@ function Duplicate-GforcesCars {
                     }
                     # Add files/en.xml
                     if(Test-Path $dir\$car_origin\files\tour.xml) {
-                        Copy-Item -Path $dir\$car_origin\files\tour.xml -Destination $dir\$car_duplicate\files\en.xml -Force -Verbose
+                        Copy-Item -Path $dir\$car_origin\files\tour.xml -Destination $dir\$car_duplicate\files\en.xml -Force
+                    }
+                    # Duplicate seat variation buttons
+                    if ( Get-ChildItem $dir\$car_origin\files\btn*.jpg ) {
+                        Copy-Item $dir\$car_origin\files\btn_*.jpg $dir\$car_duplicate\files\
                     }
                     # Create an Array to print the items afterwards
                     $duplicateInfo = ">> $car_origin > $car_duplicate"
