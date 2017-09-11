@@ -58,7 +58,9 @@
                         $model = ($gbCar.id -split "_")[2]
                         $deriv = ($gbCar.id -split "_")[3]
                         $car_duplicate = 'ie_' + $brand + '_' + $model + '_' + $deriv
+                        $car_duplicate2 = 'za_' + $brand + '_' + $model + '_' + $deriv
                         [Array]$ignoreArray += $car_duplicate
+                        [Array]$ignoreArray += $car_duplicate2
                     }
                 }
             }
@@ -223,6 +225,8 @@
     Add-GforcesBrandDevelXml
     # Add 'brands/country/brand/brand.xml'
     Add-GforcesBrandXml
+    # Brands duplicated from other countries
+    Add-GforcesMoreCountriesIndex
     # Fix some cars with the wrong name
     Rename-CarsWithWrongName
     }
