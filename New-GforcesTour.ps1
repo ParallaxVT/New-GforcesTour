@@ -25,15 +25,15 @@
         #[string]$TourName
         )
     Begin {
-        . C:\Users\Rafael\Documents\WindowsPowerShell\Scripts\gforces\New-GforcesTour\New-GforcesTour-Functions.ps1
+        . /Users/rafael/dotfiles/powershell/Scripts/New-GforcesTour/New-GforcesTour-Functions.ps1
         #$DebugPreference = "Continue"
         # Stop if there is any error
         $ErrorActionPreference = "Stop"
         $krVersion = "1.18"
         # All the files are relative to this script path
-        $dir = "E:\virtual_tours\gforces\cars"
+        $dir = "/Users/rafael/virtual-tours/gforces/cars"
         #$dir = "C:\Users\Rafael\Downloads\gforces-tour"
-        $config = "$dir\.src\config.xml"
+        $config = "$dir/.src/config.xml"
         #Clear-Host
         if (!(Test-Path $config)) { Throw "Where is config.xml?" }
         # Source config.xml
