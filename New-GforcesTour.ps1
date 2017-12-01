@@ -196,7 +196,7 @@
     # Don't run the script ONLY for a renamed car. It's ok if is included with others, but it break things if it's alone
     if ($tourArray -like "") {Throw "$($tourName.BaseName) is a 'renamed' or 'ignored' car. Make sure that the script generate files for at least 1 car."}
     # Remove duplicates from the array
-    $tourArray = $tourArray | Split-String "," | sort -Unique
+    $tourArray = $tourArray.Split(",") | Sort-Object -Unique
     # Check that all the car folders contain any HTML file.
     # If there isn't one, that would mean that I generated the tiles for a car, but I didn't add the details to config.xml
     # and run the script to generate the tour files
