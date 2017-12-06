@@ -190,11 +190,7 @@ function Add-GforcesCountryIndex ($customtour) {
                             '            <ul>'
                             foreach ($model in $brand.model) {
                                 foreach ($car in $model.car) {
-                                    if (!($customtour)) {
-                                        '                <li><a href="../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
-                                    } else {
-                                        'INSERT' + $brand.id
-                                    }
+                                    '                <li><a href="../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
                                 }
                             }
                             '            </ul>'
@@ -226,29 +222,57 @@ function Add-GforcesCountryIndex ($customtour) {
             }
             # Do the following block only when the function is callod for more countries
             if ($customtour) {
-            $ctext = "INSERT" + $brand.id
                 # country code origing and country code dest
                 $ccorig = $country.id + '_'
                 $ccdest = $destcountry + '_'
-                (Get-Content "$countryFolder\index.html") |
+                Get-Content "$dir\.src\html\index_template.html" |
                 foreach {
-                    if ($_ -match $ctext ) {
-                        foreach ($country in $configXml.tour.country | Where-Object { $_.id -like $countryId } ) {
-                            foreach ($brand in $country.brand | Where-Object { $_.id -like $brandId } ) {
-                                foreach ($model in $brand.model) {
-                                    foreach ($car in $model.car) {
-                                    '                <li><a href="../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
-                                    }
+                    if ($_ -match 'ADDCONTENT' ) {
+                        '            <h5><a href="../index.html">(Up One Level)</a></h5>'
+                        foreach ($brand in $country.brand) {
+                            '            <h4><a name="' + $brand.id + '" href="./' + $($brand.id) + '/index.html">' + $brand.name + '</a></h4>'
+                            '            <ul>'
+                            foreach ($model in $brand.model) {
+                                foreach ($car in $model.car) {
+                                    'INSERT' + $brand.id
                                 }
                             }
+                            '            </ul>'
                         }
-                    } else {
+                    }
+                    else
+                    {
                         $_
                     }
                 } |
-                foreach { ($_).replace("$ccorig","$ccdest") } |
+                foreach {($_).replace('NEWPATH','../..')} |
+                foreach {($_).replace('HOMEPATH','..')} |
+                foreach {($_).replace('All Brands','Grid View')} |
+                foreach {($_).replace('./brands/index.html','./grid_more.html')} |
                 Set-Content "$countryFolder\index.html"
                 Write-Verbose "   > $($destcountry)\index.html file"
+                foreach ($brand in $country.brand ) {
+                    $ctext = "INSERT" + $brand.id
+                    (Get-Content "$countryFolder\index.html") |
+                    foreach {
+                        if ($_ -match $ctext ) {
+                            foreach ($country in $configXml.tour.country | Where-Object { $_.id -like $countryId } ) {
+                                foreach ($brand in $country.brand | Where-Object { $_.id -like $brand.id } ) {
+                                    foreach ($model in $brand.model) {
+                                        foreach ($car in $model.car) {
+                                        '                <li><a href="../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            $_
+                        }
+                    } |
+                    foreach { ($_).replace("$ccorig","$ccdest") } |
+                    Set-Content "$countryFolder\index.html"
+                    Write-Verbose "   > $($destcountry)\index.html > $($brand.id)"
+                }
             }
         }
     }
@@ -326,11 +350,7 @@ function Add-GforcesBrandIndex ($customtour) {
                                 Write-Debug "     Add folder $brandFolder"
                             }
                             foreach ($model in $brand.model) {
-                                if (!($customtour)) {
-                                    '                <li><a href="../../' + $country.id + '/' + $brand.id + '/' + $model.id + '/index.html" title="' + $model.name + '">'+ $model.name + '</a></li>'
-                                } else {
-                                        'INSERT' + $brand.id
-                                }
+                                '                <li><a href="../../' + $country.id + '/' + $brand.id + '/' + $model.id + '/index.html" title="' + $model.name + '">'+ $model.name + '</a></li>'
                             }
                             '            </ul>'
                         }
@@ -348,29 +368,22 @@ function Add-GforcesBrandIndex ($customtour) {
                 } else {
                 # Do the following block only when the function is called for more countries
                     if ($customtour) {
-                        $ctext = "INSERT" + $brand.id
-                        # country code origing and country code dest
-                        $ccorig = $country.id + '_'
-                        $ccdest = $destcountry + '_'
-                        (Get-Content "$brandFolder\index.html") |
-                        foreach {
-                            if ($_ -match $ctext ) {
-                                foreach ($country in $configXml.tour.country | Where-Object { $_.id -like $countryId } ) {
-                                    foreach ($brand in $country.brand | Where-Object { $_.id -like $brandId } ) {
-                                        foreach ($model in $brand.model) {
-                                            foreach ($car in $model.car) {
-                                            '                <li><a href="../../' + $car.id + '/index.html" title="' + $car.name + '">'+ $car.id + '</a></li>'
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
-                                $_
-                            }
-                        } |
-                        foreach { ($_).replace("$ccorig","$ccdest") } |
-                        Set-Content "$brandFolder\index.html"
-                        Write-Verbose "   > $($destcountry)\index.html file"
+                        Copy-Item -Recurse -Force -Path "$dir\brands\$($country.id)\$($brand.id)" -Destination "$dir\brands\$($country.dest)\"
+                        $allModels = Get-ChildItem $brandFolder -Filter "*.html"
+                        ForEach ($item in $allModels) {
+                            Get-Content $item.FullName |
+                            ForEach { ($_).replace("$($country.id)","$($country.dest)") } |
+                            Set-Content $item.FullName
+                            Write-Verbose "   > $($country.dest)\$($brand.id)\$($item.Name)"
+                        }
+                        $allCars = Get-ChildItem "$brandFolder" -Directory -Exclude 'content'
+                        ForEach ($item2 in $allCars) {
+                            $itemPath = Join-Path "$item2" -ChildPath "index.html"
+                            Get-Content $itemPath |
+                            ForEach { ($_).replace("$($country.id)","$($country.dest)") } |
+                            Set-Content $itemPath
+                            Write-Verbose "   > $($country.dest)\$($brand.id)\$($item2.BaseName)\index.html"
+                        }
                     }
                 }
             }
