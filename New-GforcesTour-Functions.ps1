@@ -825,7 +825,7 @@ function Duplicate-GforcesCars {
                     }
                     else
                     {
-                        $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene_*.xml
+                        $origin_scene = Get-Content $dir\$car_origin\files\scenes\scene*.xml
                         $out_file = "$dir\$car_duplicate\files\scenes\scene.xml"
                         New-Item -ItemType File $out_file -Force | Out-Null
                         Add-Content $out_file ('<krpano>')
