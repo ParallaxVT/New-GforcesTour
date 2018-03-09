@@ -364,6 +364,13 @@ function Add-GforcesBrandIndex ($customtour) {
                     foreach {($_).replace('./brands/index.html','./brand.html')} |
                     Set-Content "$brandFolder\index.html"
                     Write-Verbose "   > $($country.id)\$($brand.id)\index.html file"
+
+                    if ($country.id -like 'gb' ) {
+                        Get-Content "$dir\brands\gb\$($brand.id)\index.html" |
+                        foreach {($_).replace('gb_','ie_')} |
+                        Set-Content "$dir\brands\ie\$($brand.id)\index.html"
+                        Write-Verbose "   > ie\$($brand.id)\index.html file"
+                    }
                 } else {
                 # Do the following block only when the function is called for more countries
                     if ($customtour) {
