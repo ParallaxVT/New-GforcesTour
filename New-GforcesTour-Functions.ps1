@@ -45,8 +45,7 @@ function Add-GforcesDevelXml {
     $develFile = "$dir\$tour\files\devel.xml"
     New-Item -ItemType File $develFile -Force | Out-Null
     Add-Content $develFile '<?xml version="1.0" encoding="UTF-8"?>'
-    Add-Content $develFile ('<krpano version="' + $krVersion + '">')
-    Add-Content $develFile '    <krpano logkey="true" />'
+    Add-Content $develFile ('<krpano version="' + $krVersion + '" logkey="true">')
     Add-Content $develFile '    <develmode enabled="true" />'
     Add-Content $develFile '    <!-- Plugins -->'
     Add-Content $develFile ('    <include url="%SWFPATH%/plugins/showtext.xml" />')
@@ -54,8 +53,8 @@ function Add-GforcesDevelXml {
     $contentfolder = Get-ChildItem "$dir\$tour\files\content\*.xml"  |
     foreach { Add-Content $develFile ('    <include url="%CURRENTXML%/content/' + $_.BaseName + '.xml" />') }
     Add-Content $develFile '    <!-- Include -->'
-    $includefolder = Get-ChildItem "$dir\shared\include\"  |
-    foreach { Add-Content $develFile ('    <include url="%SWFPATH%/include/' + $_.BaseName + '/index.xml" />') }
+    $includefolder = Get-ChildItem "$dir\shared\includev2\"  |
+    foreach { Add-Content $develFile ('    <include url="%SWFPATH%/includev2/' + $_.BaseName + '/index.xml" />') }
     Add-Content $develFile '    <!-- Scenes -->'
     $scenesfolder = Get-ChildItem "$dir\$tour\files\scenes\*.xml"  |
     foreach { Add-Content $develFile ('    <include url="%CURRENTXML%/scenes/' + $_.BaseName + '.xml" />') }
@@ -100,12 +99,12 @@ function Add-GforcesTourXml {
     # Add XML files inside 'include' folder
     if (Test-Path "$dir\$tour\files\scenes\scene.xml") {
         # For normal interiors
-        $includeFolder = Get-ChildItem "$dir\shared\include\*\*.xml" -Exclude coordfinder, editor_and_options, visualiser
+        $includeFolder = Get-ChildItem "$dir\shared\includev2\*\*.xml" -Exclude coordfinder, editor_and_options, visualiser
         # For the visualiser
     }
     else
     {
-        $includeFolder = Get-ChildItem "$dir\shared\include\*\*.xml" -Exclude coordfinder, editor_and_options
+        $includeFolder = Get-ChildItem "$dir\shared\includev2\*\*.xml" -Exclude coordfinder, editor_and_options
     }
     Add-ToTourXml $includeFolder
     # Add XML files inside 'scenes' folder
