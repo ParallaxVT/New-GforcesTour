@@ -29,7 +29,7 @@
         #$DebugPreference = "Continue"
         # Stop if there is any error
         $ErrorActionPreference = "Stop"
-        $krVersion = "1.18"
+        $krVersion = "1.19"
         # All the files are relative to this script path
         $dir = "/Users/rafael/virtual-tours/gforces/cars"
         #$dir = "C:\Users\Rafael\Downloads\gforces-tour"
