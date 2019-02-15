@@ -529,6 +529,10 @@ function Add-GforcesBrandHtml {
         foreach ($country in $tour | where { $_.id -like $countryId } ) {
             foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
                 $first_car = $brand.model.car[0].id
+                # Fix when there is only one car and $first_car = null
+                if (!$first_car) {
+                    $first_car = $brand.model.car.id
+                }
                 $brand_name = $brand.id
                 $brandname = "$($country.id)/$($brand.id)"
                 # Create brand.html for each brand
