@@ -526,9 +526,14 @@ function Add-GforcesBrandHtml {
     foreach ($item in $tourArray) {
         $countryId = ($item -split "_")[0]
         $brandId = ($item -split "_")[1]
-        foreach ($country in $tour | where { $_.id -like $countryId } ) {
-            foreach ($brand in $country.brand | where { $_.id -like $brandId } ) {
-                $first_car = $brand.model.car[0].id
+        foreach ($country in $tour | Where-Object { $_.id -like $countryId } ) {
+            foreach ($brand in $country.brand | Where-Object { $_.id -like $brandId } ) {
+                $firstModel = $brand.model[0].id
+                foreach ($model in $brand.model | Where-Object { $_.id -like $firstModel }) {
+                    foreach ($car in $model.car | Where-Object { $_.hide -notlike 'y'}) {
+                        $first_car = $car.id
+                    }
+                }
                 # Fix when there is only one car and $first_car = null
                 if (!$first_car) {
                     $first_car = $brand.model.car.id
