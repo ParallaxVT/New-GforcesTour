@@ -823,14 +823,18 @@ function Duplicate-GforcesCars {
                     if (!(Test-Path "$dir\$car_duplicate")) {
                         New-Item "$dir\$car_duplicate" -Type Directory | Out-Null
                     }
-                    if ( Test-Path $dir\$car_duplicate\index.html ) {
-                        Remove-Item $dir\$car_duplicate\index.html -Force
+                    # index.html for OEM cars are done manually to point all URLs to the manufacturers folder
+                    # Hence, don't override that file
+                    if ($ignoreArray -notcontains $car_origin) {
+                        if ( Test-Path $dir\$car_duplicate\index.html ) {
+                            Remove-Item $dir\$car_duplicate\index.html -Force
+                        }
+                        $template_content = Get-Content $dir\.src\html\scene_template.html
+                        $template_content |
+                        foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
+                        foreach { ($_).replace('SCENENAME',$item) } |
+                        Out-File -Encoding utf8 $dir\$car_duplicate\index.html
                     }
-                    $template_content = Get-Content $dir\.src\html\scene_template.html
-                    $template_content |
-                    foreach { ($_).replace('SERVERNAME',$configXML.tour.url) } |
-                    foreach { ($_).replace('SCENENAME',$item) } |
-                    Out-File -Encoding utf8 $dir\$car_duplicate\index.html
                     # Add content\index.xml
                     if (!(Test-Path "$dir\$car_duplicate\files")) {
                         New-Item "$dir\$car_duplicate\files" -Type Director | Out-Null
