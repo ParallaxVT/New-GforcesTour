@@ -125,7 +125,7 @@
                     if($carCount -gt 1) {
                         if ($carCount -notlike $hideCount) {
                             $carError = $country.id + '_' + $brand.id + '_' + $model.id
-                            Write-Warning "Check $carError hyde attribute"
+                            Write-Warning "Check $carError hide attribute"
                         }
                     }
                 }
