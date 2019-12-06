@@ -50,7 +50,7 @@
             [Array]$ignoredCarsArray += $ignoredCar.id
         }
         # Ignore any 'ie_' car, as they will be duplicated
-        foreach ( $gbCountry in $configXml.tour.country | where {$_.id -like 'gb'}) {
+        foreach ( $gbCountry in $configXml.tour.country | Where-Object {$_.id -like 'gb'}) {
             foreach ( $gbBrand in $gbCountry.brand ) {
                 foreach ( $gbModel in $gbBrand.model ) {
                     foreach ($gbCar in $gbModel.car) {
@@ -68,8 +68,8 @@
         # Add the cars that will be duplicated
         foreach ( $country in $configXml.tour.duplicate.country ) {
             foreach ( $brand in $country.brand ) {
-                foreach ( $country_duplicate in $configXml.tour.country | where {$_.id -like $country.id}) {
-                    foreach ( $brand_duplicate in $country_duplicate.brand | where {$_.id -like $brand.id}) {
+                foreach ( $country_duplicate in $configXml.tour.country | Where-Object {$_.id -like $country.id}) {
+                    foreach ( $brand_duplicate in $country_duplicate.brand | Where-Object {$_.id -like $brand.id}) {
                         $dest = $brand.dest
                         foreach ($model in $brand_duplicate.model) {
                             foreach ($car in $model.car) {
@@ -137,7 +137,7 @@
             [Array]$renameToArray += $car
         }
         Get-ChildItem . -Exclude .src, .no_scenes, brands, shared -Directory |
-        foreach {
+        ForEach-Object {
             $carID = $($_.BaseName)
             $carFolder = ".src/panos/$carID.jpg"
             # Skip checking ignored cars
@@ -162,7 +162,7 @@
             foreach ( $brand in $country.brand) {
                 foreach ($model in $brand.model) {
                     foreach ($car in $model.car) {
-                        $tour = $($car.id) | where { $_ -match $TourName.BaseName }
+                        $tour = $($car.id) | Where-Object { $_ -match $TourName.BaseName }
                         if ($tour -notlike "" ) {
                             # Extract information from the car file name
                             $countrycode = ($tour -split "_")[0]
@@ -201,7 +201,7 @@
     # If there isn't one, that would mean that I generated the tiles for a car, but I didn't add the details to config.xml
     # and run the script to generate the tour files
     Get-ChildItem . -Exclude .src, .no_scenes, brands, shared -Directory |
-        foreach {
+        ForEach-Object {
             if(!(Test-Path "$($_.FullName)/*.html")){Throw "The follwing folder doesn't contain any HTLM files: $($_.FullName)`
             This is probably because I generated the tiles but I didn't add the details to the config.xml file"}
         }
