@@ -36,6 +36,10 @@
         $config = "$dir/.src/config.xml"
         #Clear-Host
         if (!(Test-Path $config)) { Throw "Where is config.xml?" }
+        # Delete kmem: folder if exists
+        $kmemdir = "$dir/kmem:/"
+        if (Test-Path $kmemdir) { Remove-Item $kmemdir -Recurse -Force -Confirm:$false }
+
         # Source config.xml
         [xml]$configXml = Get-Content $config
        # Array containing all the cars to be ranamed
